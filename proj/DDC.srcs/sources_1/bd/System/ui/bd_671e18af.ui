@@ -1,0 +1,78 @@
+{
+   ExpandedHierarchyInLayout: "",
+   PinnedBlocks: "",
+   PinnedPorts: "",
+   guistr: "# # String gsaved with Nlview 6.8.5  2018-01-30 bk=1.4354 VDI=40 GEI=35 GUI=JA:1.6 TLS
+#  -string -flagsOSRD
+preplace port DDR -pg 1 -y 1040 -defaultsOSRD
+preplace port hdmi_rx_ddc -pg 1 -y 730 -defaultsOSRD
+preplace port hdmi_tx_clk_n -pg 1 -y 880 -defaultsOSRD
+preplace port FIXED_IO -pg 1 -y 1060 -defaultsOSRD
+preplace port hdmi_tx_clk_p -pg 1 -y 860 -defaultsOSRD
+preplace port hdmi_rx_clk_n -pg 1 -y 770 -defaultsOSRD
+preplace port hdmi_rx_clk_p -pg 1 -y 750 -defaultsOSRD
+preplace portBus hdmi_rx_hpa -pg 1 -y 1290 -defaultsOSRD
+preplace portBus hdmi_tx_data_n -pg 1 -y 920 -defaultsOSRD
+preplace portBus hdmi_rx_data_n -pg 1 -y 810 -defaultsOSRD
+preplace portBus led -pg 1 -y 760 -defaultsOSRD
+preplace portBus hdmi_tx_data_p -pg 1 -y 900 -defaultsOSRD
+preplace portBus hdmi_rx_data_p -pg 1 -y 790 -defaultsOSRD
+preplace portBus switch -pg 1 -y 970 -defaultsOSRD
+preplace inst fifo_1280_2 -pg 1 -lvl 4 -y 20 -defaultsOSRD
+preplace inst rgb2dvi_0 -pg 1 -lvl 4 -y 940 -defaultsOSRD
+preplace inst Video_Processing_Sys_0 -pg 1 -lvl 3 -y 900 -defaultsOSRD
+preplace inst Shift_register_0 -pg 1 -lvl 3 -y 500 -defaultsOSRD
+preplace inst Shift_register_1 -pg 1 -lvl 3 -y 260 -defaultsOSRD
+preplace inst RGB_to_Gray_0 -pg 1 -lvl 2 -y 570 -defaultsOSRD
+preplace inst dvi2rgb_0 -pg 1 -lvl 1 -y 800 -defaultsOSRD
+preplace inst fifo_1280_0 -pg 1 -lvl 4 -y 500 -defaultsOSRD
+preplace inst VCC -pg 1 -lvl 3 -y 1290 -defaultsOSRD
+preplace inst Shift_register_2 -pg 1 -lvl 3 -y 20 -defaultsOSRD
+preplace inst fifo_1280_1 -pg 1 -lvl 4 -y 260 -defaultsOSRD
+preplace inst processing_system7_0 -pg 1 -lvl 4 -y 1160 -defaultsOSRD
+preplace netloc processing_system7_0_DDR 1 4 1 1640J
+preplace netloc Shift_register_1_line 1 2 2 720 350 1080
+preplace netloc VCC_dout 1 3 2 1130J 1290 N
+preplace netloc Video_Processing_Sys_0_out_Pixel_Clk 1 3 1 1100
+preplace netloc rgb2dvi_0_TMDS_Clk_n 1 4 1 1650J
+preplace netloc fifo_1280_0_full 1 2 3 700 590 1180 630 1630
+preplace netloc switch_1 1 0 3 NJ 970 NJ 970 710J
+preplace netloc hdmi_rx_data_n_1 1 0 1 NJ
+preplace netloc hdmi_rx_data_p_1 1 0 1 NJ
+preplace netloc fifo_1280_2_dout 1 2 2 710 100 1160
+preplace netloc rgb2dvi_0_TMDS_Clk_p 1 4 1 1640J
+preplace netloc Video_Processing_Sys_0_EN_Gray 1 1 3 410 690 N 690 1080
+preplace netloc fifo_1280_1_dout 1 2 2 740 340 1160
+preplace netloc dvi2rgb_0_vid_pVDE 1 1 2 380 920 N
+preplace netloc Shift_register_0_line 1 2 2 730 420 1080
+preplace netloc Video_Processing_Sys_0_out_VSync 1 3 1 1120
+preplace netloc dvi2rgb_0_DDC 1 1 4 410J 730 NJ 730 NJ 730 NJ
+preplace netloc Video_Processing_Sys_0_Led 1 3 2 1090 760 NJ
+preplace netloc dvi2rgb_0_vid_pHSync 1 1 2 N 770 670
+preplace netloc processing_system7_0_FIXED_IO 1 4 1 1660J
+preplace netloc Shift_register_2_line 1 2 2 710 110 1080
+preplace netloc fifo_1280_0_dout 1 2 2 740 580 1140
+preplace netloc RGB_to_Gray_0_Gray 1 2 2 690 -60 1160J
+preplace netloc dvi2rgb_0_vid_pData 1 1 1 380
+preplace netloc Video_Processing_Sys_0_out_Data 1 3 1 1170
+preplace netloc dvi2rgb_0_vid_pVSync 1 1 2 390 900 N
+preplace netloc rgb2dvi_0_TMDS_Data_n 1 4 1 1670J
+preplace netloc hdmi_rx_clk_p_1 1 0 1 NJ
+preplace netloc Video_Processing_Sys_0_out_VDE 1 3 1 1110
+preplace netloc processing_system7_0_FCLK_CLK0 1 3 2 1170 1280 1620
+preplace netloc rgb2dvi_0_TMDS_Data_p 1 4 1 1660J
+preplace netloc hdmi_rx_clk_n_1 1 0 1 NJ
+preplace netloc processing_system7_0_FCLK_CLK1 1 0 5 -110 670 NJ 670 N 670 N 670 1630
+preplace netloc fifo_1280_1_full 1 3 2 1170 -120 1670
+preplace netloc fifo_1280_2_full 1 3 2 1180 -110 1630
+preplace netloc dvi2rgb_0_PixelClk 1 1 3 400 680 680 120 1150
+preplace netloc Video_Processing_Sys_0_out_HSync 1 3 1 1150
+levelinfo -pg 1 -130 200 540 910 1420 1690 -top -470 -bot 1480
+",
+}
+{
+   da_axi4_cnt: "2",
+   da_board_cnt: "3",
+   da_clkrst_cnt: "1",
+   da_ps7_cnt: "6",
+}

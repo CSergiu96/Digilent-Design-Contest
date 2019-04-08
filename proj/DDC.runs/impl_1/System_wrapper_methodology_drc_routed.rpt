@@ -1,0 +1,114 @@
+Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2018.2 (lin64) Build 2258646 Thu Jun 14 20:02:38 MDT 2018
+| Date         : Sun Apr  7 17:13:49 2019
+| Host         : home running 64-bit Ubuntu 18.04.2 LTS
+| Command      : report_methodology -file System_wrapper_methodology_drc_routed.rpt -pb System_wrapper_methodology_drc_routed.pb -rpx System_wrapper_methodology_drc_routed.rpx
+| Design       : System_wrapper
+| Device       : xc7z020clg400-1
+| Speed File   : -1
+| Design State : Routed
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Report Methodology
+
+Table of Contents
+-----------------
+1. REPORT SUMMARY
+2. REPORT DETAILS
+
+1. REPORT SUMMARY
+-----------------
+            Netlist: netlist
+          Floorplan: design_1
+      Design limits: <entire design considered>
+             Max violations: <unlimited>
+             Violations found: 13
++-----------+----------+--------------------------------------------------------+------------+
+| Rule      | Severity | Description                                            | Violations |
++-----------+----------+--------------------------------------------------------+------------+
+| CKBF-1    | Warning  | connects_I_driver_BUFR                                 | 1          |
+| TIMING-2  | Warning  | Invalid primary clock source pin                       | 1          |
+| TIMING-4  | Warning  | Invalid primary clock redefinition on a clock tree     | 1          |
+| TIMING-9  | Warning  | Unknown CDC Logic                                      | 1          |
+| TIMING-14 | Warning  | LUT on the clock tree                                  | 3          |
+| TIMING-18 | Warning  | Missing input or output delay                          | 2          |
+| XDCB-5    | Warning  | Runtime inefficient way to find pin objects            | 2          |
+| XDCC-1    | Warning  | Scoped Clock constraint overwritten with the same name | 1          |
+| XDCC-7    | Warning  | Scoped Clock constraint overwritten on the same source | 1          |
++-----------+----------+--------------------------------------------------------+------------+
+
+2. REPORT DETAILS
+-----------------
+CKBF-1#1 Warning
+connects_I_driver_BUFR  
+The BUFG cell System_i/dvi2rgb_0/U0/GenerateBUFG.ResyncToBUFG_X/InstBUFG I pin is driven by a BUFR cell System_i/dvi2rgb_0/U0/TMDS_ClockingX/PixelClkBuffer. For 7-Series devices, this is not a recommended clock topology. Please analyze your clock network and remove the BUFR to BUFG cascade.
+Related violations: <none>
+
+TIMING-2#1 Warning
+Invalid primary clock source pin  
+A primary clock System_i/dvi2rgb_0/U0/RefClk is created on an inappropriate pin System_i/dvi2rgb_0/U0/RefClk. It is recommended to create a primary clock only on a proper clock source (input port or primitive output pin with no timing arc)
+Related violations: <none>
+
+TIMING-4#1 Warning
+Invalid primary clock redefinition on a clock tree  
+Invalid clock redefinition on a clock tree. The primary clock System_i/dvi2rgb_0/U0/RefClk is defined downstream of clock clk_fpga_1 and overrides its insertion delay and/or waveform definition
+Related violations: <none>
+
+TIMING-9#1 Warning
+Unknown CDC Logic  
+One or more asynchronous Clock Domain Crossing has been detected between 2 clock domains through a set_false_path or a set_clock_groups or set_max_delay -datapath_only constraint but no double-registers logic synchronizer has been found on the side of the capture clock. It is recommended to run report_cdc for a complete and detailed CDC coverage. Please consider using XPM_CDC to avoid Critical severities
+Related violations: <none>
+
+TIMING-14#1 Warning
+LUT on the clock tree  
+The LUT System_i/Shift_register_0/inst/resultLine[71]_i_1 has been found on the clock tree. Run opt_design to optimize the clock trees, then re-run report_methodology. If LUT(s) are still present in the clock trees, modify the RTL or the synthesis options accordingly to move the clock gating logic to dedicated clock enable resources. Keep in mind that post-opt_design database cannot be used for pin-planning tasks
+Related violations: <none>
+
+TIMING-14#2 Warning
+LUT on the clock tree  
+The LUT System_i/Shift_register_1/inst/resultLine[71]_i_1 has been found on the clock tree. Run opt_design to optimize the clock trees, then re-run report_methodology. If LUT(s) are still present in the clock trees, modify the RTL or the synthesis options accordingly to move the clock gating logic to dedicated clock enable resources. Keep in mind that post-opt_design database cannot be used for pin-planning tasks
+Related violations: <none>
+
+TIMING-14#3 Warning
+LUT on the clock tree  
+The LUT System_i/Shift_register_2/inst/resultLine[71]_i_1 has been found on the clock tree. Run opt_design to optimize the clock trees, then re-run report_methodology. If LUT(s) are still present in the clock trees, modify the RTL or the synthesis options accordingly to move the clock gating logic to dedicated clock enable resources. Keep in mind that post-opt_design database cannot be used for pin-planning tasks
+Related violations: <none>
+
+TIMING-18#1 Warning
+Missing input or output delay  
+An input delay is missing on hdmi_rx_ddc_scl_io relative to clock(s) System_i/dvi2rgb_0/U0/RefClk
+Related violations: <none>
+
+TIMING-18#2 Warning
+Missing input or output delay  
+An input delay is missing on hdmi_rx_ddc_sda_io relative to clock(s) System_i/dvi2rgb_0/U0/RefClk
+Related violations: <none>
+
+XDCB-5#1 Warning
+Runtime inefficient way to find pin objects  
+The option '-through : [get_pins -filter {NAME =~ */*SyncAsync*/oSyncStages_reg[0]/D} -hier]' of constraint 'set_false_path' uses inefficient query to find pin objects (see constraint position '2' in the Timing Constraint window in Vivado IDE). To reduce runtime, it is recommended to get the pins through the cell objects. Please refer to Using Constraints Guide (Constraints Efficiency). An example of optimal query is: get_pins -filter {REF_PIN_NAME=~yy*} -of_objects [get_cells -hierarchical xx*].
+Current XDC: /home/sergiu/Documents/DDC/DDC.srcs/sources_1/bd/System/ip/System_dvi2rgb_0_1/src/dvi2rgb.xdc (Line: 13)
+Related violations: <none>
+
+XDCB-5#2 Warning
+Runtime inefficient way to find pin objects  
+The option '-through : [get_pins -filter {NAME =~ *SyncAsync*/oSyncStages_reg[0]/D} -hier]' of constraint 'set_false_path' uses inefficient query to find pin objects (see constraint position '7' in the Timing Constraint window in Vivado IDE). To reduce runtime, it is recommended to get the pins through the cell objects. Please refer to Using Constraints Guide (Constraints Efficiency). An example of optimal query is: get_pins -filter {REF_PIN_NAME=~yy*} -of_objects [get_cells -hierarchical xx*].
+Current XDC: /home/sergiu/Documents/DDC/DDC.srcs/sources_1/bd/System/ip/System_rgb2dvi_0_1/src/rgb2dvi.xdc (Line: 5)
+Related violations: <none>
+
+XDCC-1#1 Warning
+Scoped Clock constraint overwritten with the same name  
+A new clock constraint create_clock overrides a previous scoped clock constraint with the same name. It is not recommended to override a scoped (typically an IP) clock constraint and could result in unexpected behaviors.
+New: create_clock -period 13.468 -waveform {0.000 5.000} [get_ports hdmi_rx_clk_p] (Source: /home/sergiu/Documents/DDC/DDC.srcs/constrs_1/imports/new/zybo_const.xdc (Line: 5))
+Previous: create_clock -period 6.060 [get_ports hdmi_rx_clk_p] (Source: /home/sergiu/Documents/DDC/DDC.srcs/sources_1/bd/System/ip/System_dvi2rgb_0_1/src/dvi2rgb_ooc.xdc (Line: 1))
+Related violations: <none>
+
+XDCC-7#1 Warning
+Scoped Clock constraint overwritten on the same source  
+A new clock constraint create_clock overrides a previous scoped clock constraint defined on the same source. It is not recommended to override a scoped (typically an IP) clock constraint and could result in unexpected behaviors.
+New: create_clock -period 13.468 -waveform {0.000 5.000} [get_ports hdmi_rx_clk_p] (Source: /home/sergiu/Documents/DDC/DDC.srcs/constrs_1/imports/new/zybo_const.xdc (Line: 5))
+Previous: create_clock -period 6.060 [get_ports hdmi_rx_clk_p] (Source: /home/sergiu/Documents/DDC/DDC.srcs/sources_1/bd/System/ip/System_dvi2rgb_0_1/src/dvi2rgb_ooc.xdc (Line: 1))
+Related violations: <none>
+
+
