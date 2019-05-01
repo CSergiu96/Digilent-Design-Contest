@@ -40,7 +40,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 
 # The design that will be created by this Tcl script contains the following 
 # module references:
-# RGB_to_Gray, Shift_register, Shift_register, Shift_register, Video_Processing_System
+# Video_Processing_System, RGB_to_Gray, Shift_register, Shift_register, Shift_register
 
 # Please add the sources of those modules before sourcing this Tcl script.
 
@@ -129,6 +129,395 @@ if { $nRet != 0 } {
 ##################################################################
 
 
+# Hierarchical cell: shift_registers
+proc create_hier_cell_shift_registers { parentCell nameHier } {
+
+  variable script_folder
+
+  if { $parentCell eq "" || $nameHier eq "" } {
+     catch {common::send_msg_id "BD_TCL-102" "ERROR" "create_hier_cell_shift_registers() - Empty argument(s)!"}
+     return
+  }
+
+  # Get object for parentCell
+  set parentObj [get_bd_cells $parentCell]
+  if { $parentObj == "" } {
+     catch {common::send_msg_id "BD_TCL-100" "ERROR" "Unable to find parent cell <$parentCell>!"}
+     return
+  }
+
+  # Make sure parentObj is hier blk
+  set parentType [get_property TYPE $parentObj]
+  if { $parentType ne "hier" } {
+     catch {common::send_msg_id "BD_TCL-101" "ERROR" "Parent <$parentObj> has TYPE = <$parentType>. Expected to be <hier>."}
+     return
+  }
+
+  # Save current instance; Restore later
+  set oldCurInst [current_bd_instance .]
+
+  # Set parent object as current
+  current_bd_instance $parentObj
+
+  # Create cell and set as current instance
+  set hier_obj [create_bd_cell -type hier $nameHier]
+  current_bd_instance $hier_obj
+
+  # Create interface pins
+
+  # Create pins
+  create_bd_pin -dir I -type clk clk
+  create_bd_pin -dir I en0
+  create_bd_pin -dir I en1
+  create_bd_pin -dir I en2
+  create_bd_pin -dir O -from 71 -to 0 line
+  create_bd_pin -dir O -from 71 -to 0 line1
+  create_bd_pin -dir O -from 71 -to 0 line2
+  create_bd_pin -dir I -from 23 -to 0 pixel0
+  create_bd_pin -dir I -from 23 -to 0 pixel1
+  create_bd_pin -dir I -from 23 -to 0 pixel2
+
+  # Create instance: mat_0, and set properties
+  set block_name Shift_register
+  set block_cell_name mat_0
+  if { [catch {set mat_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   } elseif { $mat_0 eq "" } {
+     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   }
+  
+  # Create instance: mat_1, and set properties
+  set block_name Shift_register
+  set block_cell_name mat_1
+  if { [catch {set mat_1 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   } elseif { $mat_1 eq "" } {
+     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   }
+  
+  # Create instance: mat_2, and set properties
+  set block_name Shift_register
+  set block_cell_name mat_2
+  if { [catch {set mat_2 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   } elseif { $mat_2 eq "" } {
+     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   }
+  
+  # Create port connections
+  connect_bd_net -net Net [get_bd_pins clk] [get_bd_pins mat_0/clk] [get_bd_pins mat_1/clk] [get_bd_pins mat_2/clk]
+  connect_bd_net -net fifo_0_dout [get_bd_pins pixel0] [get_bd_pins mat_0/pixel]
+  connect_bd_net -net fifo_0_prog_full [get_bd_pins en0] [get_bd_pins mat_0/en]
+  connect_bd_net -net fifo_1_dout [get_bd_pins pixel1] [get_bd_pins mat_1/pixel]
+  connect_bd_net -net fifo_1_prog_full [get_bd_pins en1] [get_bd_pins mat_1/en]
+  connect_bd_net -net fifo_2_dout [get_bd_pins pixel2] [get_bd_pins mat_2/pixel]
+  connect_bd_net -net fifo_2_prog_full [get_bd_pins en2] [get_bd_pins mat_2/en]
+  connect_bd_net -net mat_0_line [get_bd_pins line] [get_bd_pins mat_0/line]
+  connect_bd_net -net mat_1_line [get_bd_pins line1] [get_bd_pins mat_1/line]
+  connect_bd_net -net mat_2_line [get_bd_pins line2] [get_bd_pins mat_2/line]
+
+  # Restore current instance
+  current_bd_instance $oldCurInst
+}
+
+# Hierarchical cell: fifo_buffers
+proc create_hier_cell_fifo_buffers { parentCell nameHier } {
+
+  variable script_folder
+
+  if { $parentCell eq "" || $nameHier eq "" } {
+     catch {common::send_msg_id "BD_TCL-102" "ERROR" "create_hier_cell_fifo_buffers() - Empty argument(s)!"}
+     return
+  }
+
+  # Get object for parentCell
+  set parentObj [get_bd_cells $parentCell]
+  if { $parentObj == "" } {
+     catch {common::send_msg_id "BD_TCL-100" "ERROR" "Unable to find parent cell <$parentCell>!"}
+     return
+  }
+
+  # Make sure parentObj is hier blk
+  set parentType [get_property TYPE $parentObj]
+  if { $parentType ne "hier" } {
+     catch {common::send_msg_id "BD_TCL-101" "ERROR" "Parent <$parentObj> has TYPE = <$parentType>. Expected to be <hier>."}
+     return
+  }
+
+  # Save current instance; Restore later
+  set oldCurInst [current_bd_instance .]
+
+  # Set parent object as current
+  current_bd_instance $parentObj
+
+  # Create cell and set as current instance
+  set hier_obj [create_bd_cell -type hier $nameHier]
+  current_bd_instance $hier_obj
+
+  # Create interface pins
+
+  # Create pins
+  create_bd_pin -dir I -type clk clk
+  create_bd_pin -dir I -from 23 -to 0 din
+  create_bd_pin -dir O en_0
+  create_bd_pin -dir O en_1
+  create_bd_pin -dir O en_2
+  create_bd_pin -dir O -from 23 -to 0 pixel_0
+  create_bd_pin -dir O -from 23 -to 0 pixel_1
+  create_bd_pin -dir O -from 23 -to 0 pixel_2
+  create_bd_pin -dir I wr_en
+
+  # Create instance: fifo_0, and set properties
+  set fifo_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:fifo_generator:13.2 fifo_0 ]
+  set_property -dict [ list \
+   CONFIG.Data_Count_Width {11} \
+   CONFIG.Full_Threshold_Assert_Value {1650} \
+   CONFIG.Full_Threshold_Negate_Value {1649} \
+   CONFIG.Input_Data_Width {24} \
+   CONFIG.Input_Depth {2048} \
+   CONFIG.Output_Data_Width {24} \
+   CONFIG.Output_Depth {2048} \
+   CONFIG.Programmable_Empty_Type {No_Programmable_Empty_Threshold} \
+   CONFIG.Programmable_Full_Type {Single_Programmable_Full_Threshold_Constant} \
+   CONFIG.Read_Data_Count_Width {11} \
+   CONFIG.Reset_Pin {false} \
+   CONFIG.Reset_Type {Asynchronous_Reset} \
+   CONFIG.Use_Dout_Reset {false} \
+   CONFIG.Write_Data_Count_Width {11} \
+ ] $fifo_0
+
+  # Create instance: fifo_1, and set properties
+  set fifo_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:fifo_generator:13.2 fifo_1 ]
+  set_property -dict [ list \
+   CONFIG.Data_Count_Width {11} \
+   CONFIG.Full_Threshold_Assert_Value {1650} \
+   CONFIG.Full_Threshold_Negate_Value {1649} \
+   CONFIG.Input_Data_Width {24} \
+   CONFIG.Input_Depth {2048} \
+   CONFIG.Output_Data_Width {24} \
+   CONFIG.Output_Depth {2048} \
+   CONFIG.Programmable_Empty_Type {No_Programmable_Empty_Threshold} \
+   CONFIG.Programmable_Full_Type {Single_Programmable_Full_Threshold_Constant} \
+   CONFIG.Read_Data_Count_Width {11} \
+   CONFIG.Reset_Pin {false} \
+   CONFIG.Reset_Type {Asynchronous_Reset} \
+   CONFIG.Use_Dout_Reset {false} \
+   CONFIG.Write_Data_Count_Width {11} \
+ ] $fifo_1
+
+  # Create instance: fifo_2, and set properties
+  set fifo_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:fifo_generator:13.2 fifo_2 ]
+  set_property -dict [ list \
+   CONFIG.Data_Count_Width {11} \
+   CONFIG.Full_Threshold_Assert_Value {1650} \
+   CONFIG.Full_Threshold_Negate_Value {1649} \
+   CONFIG.Input_Data_Width {24} \
+   CONFIG.Input_Depth {2048} \
+   CONFIG.Output_Data_Width {24} \
+   CONFIG.Output_Depth {2048} \
+   CONFIG.Programmable_Empty_Type {No_Programmable_Empty_Threshold} \
+   CONFIG.Programmable_Full_Type {Single_Programmable_Full_Threshold_Constant} \
+   CONFIG.Read_Data_Count_Width {11} \
+   CONFIG.Reset_Pin {false} \
+   CONFIG.Reset_Type {Asynchronous_Reset} \
+   CONFIG.Use_Dout_Reset {false} \
+   CONFIG.Write_Data_Count_Width {11} \
+ ] $fifo_2
+
+  # Create port connections
+  connect_bd_net -net Net [get_bd_pins clk] [get_bd_pins fifo_0/clk] [get_bd_pins fifo_1/clk] [get_bd_pins fifo_2/clk]
+  connect_bd_net -net RGB_to_Gray_0_Gray [get_bd_pins din] [get_bd_pins fifo_0/din]
+  connect_bd_net -net VCC_dout [get_bd_pins wr_en] [get_bd_pins fifo_0/wr_en]
+  connect_bd_net -net fifo_0_dout [get_bd_pins pixel_0] [get_bd_pins fifo_0/dout] [get_bd_pins fifo_1/din]
+  connect_bd_net -net fifo_0_prog_full [get_bd_pins en_0] [get_bd_pins fifo_0/prog_full] [get_bd_pins fifo_0/rd_en] [get_bd_pins fifo_1/wr_en]
+  connect_bd_net -net fifo_1_dout [get_bd_pins pixel_1] [get_bd_pins fifo_1/dout] [get_bd_pins fifo_2/din]
+  connect_bd_net -net fifo_1_prog_full [get_bd_pins en_1] [get_bd_pins fifo_1/prog_full] [get_bd_pins fifo_1/rd_en] [get_bd_pins fifo_2/wr_en]
+  connect_bd_net -net fifo_2_dout [get_bd_pins pixel_2] [get_bd_pins fifo_2/dout]
+  connect_bd_net -net fifo_2_prog_full [get_bd_pins en_2] [get_bd_pins fifo_2/prog_full] [get_bd_pins fifo_2/rd_en]
+
+  # Restore current instance
+  current_bd_instance $oldCurInst
+}
+
+# Hierarchical cell: triple_buffering_720p
+proc create_hier_cell_triple_buffering_720p { parentCell nameHier } {
+
+  variable script_folder
+
+  if { $parentCell eq "" || $nameHier eq "" } {
+     catch {common::send_msg_id "BD_TCL-102" "ERROR" "create_hier_cell_triple_buffering_720p() - Empty argument(s)!"}
+     return
+  }
+
+  # Get object for parentCell
+  set parentObj [get_bd_cells $parentCell]
+  if { $parentObj == "" } {
+     catch {common::send_msg_id "BD_TCL-100" "ERROR" "Unable to find parent cell <$parentCell>!"}
+     return
+  }
+
+  # Make sure parentObj is hier blk
+  set parentType [get_property TYPE $parentObj]
+  if { $parentType ne "hier" } {
+     catch {common::send_msg_id "BD_TCL-101" "ERROR" "Parent <$parentObj> has TYPE = <$parentType>. Expected to be <hier>."}
+     return
+  }
+
+  # Save current instance; Restore later
+  set oldCurInst [current_bd_instance .]
+
+  # Set parent object as current
+  current_bd_instance $parentObj
+
+  # Create cell and set as current instance
+  set hier_obj [create_bd_cell -type hier $nameHier]
+  current_bd_instance $hier_obj
+
+  # Create interface pins
+
+  # Create pins
+  create_bd_pin -dir I -type clk clk
+  create_bd_pin -dir O -from 71 -to 0 mat_center
+  create_bd_pin -dir O -from 71 -to 0 mat_high
+  create_bd_pin -dir O -from 71 -to 0 mat_low
+  create_bd_pin -dir I -from 23 -to 0 pixel
+
+  # Create instance: VCC, and set properties
+  set VCC [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 VCC ]
+
+  # Create instance: fifo_buffers
+  create_hier_cell_fifo_buffers $hier_obj fifo_buffers
+
+  # Create instance: shift_registers
+  create_hier_cell_shift_registers $hier_obj shift_registers
+
+  # Create port connections
+  connect_bd_net -net Net [get_bd_pins clk] [get_bd_pins fifo_buffers/clk] [get_bd_pins shift_registers/clk]
+  connect_bd_net -net RGB_to_Gray_0_Gray [get_bd_pins pixel] [get_bd_pins fifo_buffers/din]
+  connect_bd_net -net VCC_dout [get_bd_pins VCC/dout] [get_bd_pins fifo_buffers/wr_en]
+  connect_bd_net -net en2_1 [get_bd_pins fifo_buffers/en_2] [get_bd_pins shift_registers/en2]
+  connect_bd_net -net fifo_0_dout [get_bd_pins fifo_buffers/pixel_0] [get_bd_pins shift_registers/pixel0]
+  connect_bd_net -net fifo_0_prog_full [get_bd_pins fifo_buffers/en_0] [get_bd_pins shift_registers/en0]
+  connect_bd_net -net fifo_1_dout [get_bd_pins fifo_buffers/pixel_1] [get_bd_pins shift_registers/pixel1]
+  connect_bd_net -net fifo_1_prog_full [get_bd_pins fifo_buffers/en_1] [get_bd_pins shift_registers/en1]
+  connect_bd_net -net fifo_2_dout [get_bd_pins fifo_buffers/pixel_2] [get_bd_pins shift_registers/pixel2]
+  connect_bd_net -net mat_0_line [get_bd_pins mat_high] [get_bd_pins shift_registers/line]
+  connect_bd_net -net mat_1_line [get_bd_pins mat_center] [get_bd_pins shift_registers/line1]
+  connect_bd_net -net mat_2_line [get_bd_pins mat_low] [get_bd_pins shift_registers/line2]
+
+  # Restore current instance
+  current_bd_instance $oldCurInst
+}
+
+# Hierarchical cell: image_processing_system
+proc create_hier_cell_image_processing_system { parentCell nameHier } {
+
+  variable script_folder
+
+  if { $parentCell eq "" || $nameHier eq "" } {
+     catch {common::send_msg_id "BD_TCL-102" "ERROR" "create_hier_cell_image_processing_system() - Empty argument(s)!"}
+     return
+  }
+
+  # Get object for parentCell
+  set parentObj [get_bd_cells $parentCell]
+  if { $parentObj == "" } {
+     catch {common::send_msg_id "BD_TCL-100" "ERROR" "Unable to find parent cell <$parentCell>!"}
+     return
+  }
+
+  # Make sure parentObj is hier blk
+  set parentType [get_property TYPE $parentObj]
+  if { $parentType ne "hier" } {
+     catch {common::send_msg_id "BD_TCL-101" "ERROR" "Parent <$parentObj> has TYPE = <$parentType>. Expected to be <hier>."}
+     return
+  }
+
+  # Save current instance; Restore later
+  set oldCurInst [current_bd_instance .]
+
+  # Set parent object as current
+  current_bd_instance $parentObj
+
+  # Create cell and set as current instance
+  set hier_obj [create_bd_cell -type hier $nameHier]
+  current_bd_instance $hier_obj
+
+  # Create interface pins
+
+  # Create pins
+  create_bd_pin -dir I -from 23 -to 0 RGB
+  create_bd_pin -dir I -type clk clk
+  create_bd_pin -dir I en_filter
+  create_bd_pin -dir I en_gray
+  create_bd_pin -dir I in_HSync
+  create_bd_pin -dir I -type clk in_Pixel_Clk
+  create_bd_pin -dir I in_VDE
+  create_bd_pin -dir I in_VSync
+  create_bd_pin -dir O out_HSync
+  create_bd_pin -dir O -from 23 -to 0 out_Pixel
+  create_bd_pin -dir O -type clk out_Pixel_Clk
+  create_bd_pin -dir O out_VDE
+  create_bd_pin -dir O out_VSync
+  create_bd_pin -dir O status_filter
+  create_bd_pin -dir O status_gray
+
+  # Create instance: image_filter, and set properties
+  set block_name Video_Processing_System
+  set block_cell_name image_filter
+  if { [catch {set image_filter [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   } elseif { $image_filter eq "" } {
+     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   }
+  
+  # Create instance: rgb2gray, and set properties
+  set block_name RGB_to_Gray
+  set block_cell_name rgb2gray
+  if { [catch {set rgb2gray [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   } elseif { $rgb2gray eq "" } {
+     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   }
+  
+  # Create instance: triple_buffering_720p
+  create_hier_cell_triple_buffering_720p $hier_obj triple_buffering_720p
+
+  # Create port connections
+  connect_bd_net -net Video_Processing_Sys_0_out_HSync [get_bd_pins out_HSync] [get_bd_pins image_filter/out_HSync]
+  connect_bd_net -net Video_Processing_Sys_0_out_Pixel_Clk [get_bd_pins out_Pixel_Clk] [get_bd_pins image_filter/out_Pixel_Clk]
+  connect_bd_net -net Video_Processing_Sys_0_out_VDE [get_bd_pins out_VDE] [get_bd_pins image_filter/out_VDE]
+  connect_bd_net -net Video_Processing_Sys_0_out_VSync [get_bd_pins out_VSync] [get_bd_pins image_filter/out_VSync]
+  connect_bd_net -net clk_1 [get_bd_pins clk] [get_bd_pins image_filter/clk]
+  connect_bd_net -net dvi2rgb_0_PixelClk [get_bd_pins in_Pixel_Clk] [get_bd_pins image_filter/in_Pixel_Clk] [get_bd_pins rgb2gray/clk] [get_bd_pins triple_buffering_720p/clk]
+  connect_bd_net -net dvi2rgb_0_vid_pData [get_bd_pins RGB] [get_bd_pins rgb2gray/RGB]
+  connect_bd_net -net dvi2rgb_0_vid_pHSync [get_bd_pins in_HSync] [get_bd_pins image_filter/in_HSync]
+  connect_bd_net -net dvi2rgb_0_vid_pVDE [get_bd_pins in_VDE] [get_bd_pins image_filter/in_VDE]
+  connect_bd_net -net dvi2rgb_0_vid_pVSync [get_bd_pins in_VSync] [get_bd_pins image_filter/in_VSync]
+  connect_bd_net -net en_0_1 [get_bd_pins en_gray] [get_bd_pins rgb2gray/en]
+  connect_bd_net -net en_0_2 [get_bd_pins en_filter] [get_bd_pins image_filter/en]
+  connect_bd_net -net image_filter_out_Pixel [get_bd_pins out_Pixel] [get_bd_pins image_filter/out_Pixel]
+  connect_bd_net -net image_filter_status [get_bd_pins status_filter] [get_bd_pins image_filter/status]
+  connect_bd_net -net rgb2gray_G [get_bd_pins image_filter/in_Pixel] [get_bd_pins rgb2gray/G] [get_bd_pins triple_buffering_720p/pixel]
+  connect_bd_net -net rgb2gray_status [get_bd_pins status_gray] [get_bd_pins rgb2gray/status]
+  connect_bd_net -net triple_buffering_720p_mat_center [get_bd_pins image_filter/in_M1] [get_bd_pins triple_buffering_720p/mat_center]
+  connect_bd_net -net triple_buffering_720p_mat_high [get_bd_pins image_filter/in_M2] [get_bd_pins triple_buffering_720p/mat_high]
+  connect_bd_net -net triple_buffering_720p_mat_low [get_bd_pins image_filter/in_M0] [get_bd_pins triple_buffering_720p/mat_low]
+
+  # Restore current instance
+  current_bd_instance $oldCurInst
+}
+
 
 # Procedure to create entire design; Provide argument to make
 # procedure reusable. If parentCell is "", will use root.
@@ -177,132 +566,26 @@ proc create_root_design { parentCell } {
   set hdmi_tx_clk_p [ create_bd_port -dir O -type clk hdmi_tx_clk_p ]
   set hdmi_tx_data_n [ create_bd_port -dir O -from 2 -to 0 hdmi_tx_data_n ]
   set hdmi_tx_data_p [ create_bd_port -dir O -from 2 -to 0 hdmi_tx_data_p ]
-  set led [ create_bd_port -dir O -from 3 -to 0 led ]
-  set switch [ create_bd_port -dir I -from 3 -to 0 switch ]
+  set led_0 [ create_bd_port -dir O led_0 ]
+  set led_1 [ create_bd_port -dir O led_1 ]
+  set switch_0 [ create_bd_port -dir I switch_0 ]
+  set switch_1 [ create_bd_port -dir I switch_1 ]
 
-  # Create instance: RGB_to_Gray_0, and set properties
-  set block_name RGB_to_Gray
-  set block_cell_name RGB_to_Gray_0
-  if { [catch {set RGB_to_Gray_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   } elseif { $RGB_to_Gray_0 eq "" } {
-     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   }
-  
-  # Create instance: Shift_register_0, and set properties
-  set block_name Shift_register
-  set block_cell_name Shift_register_0
-  if { [catch {set Shift_register_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   } elseif { $Shift_register_0 eq "" } {
-     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   }
-  
-  # Create instance: Shift_register_1, and set properties
-  set block_name Shift_register
-  set block_cell_name Shift_register_1
-  if { [catch {set Shift_register_1 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   } elseif { $Shift_register_1 eq "" } {
-     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   }
-  
-  # Create instance: Shift_register_2, and set properties
-  set block_name Shift_register
-  set block_cell_name Shift_register_2
-  if { [catch {set Shift_register_2 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   } elseif { $Shift_register_2 eq "" } {
-     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   }
-  
-  # Create instance: VCC, and set properties
-  set VCC [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 VCC ]
+  # Create instance: VCC1, and set properties
+  set VCC1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 VCC1 ]
 
-  # Create instance: Video_Processing_Sys_0, and set properties
-  set block_name Video_Processing_System
-  set block_cell_name Video_Processing_Sys_0
-  if { [catch {set Video_Processing_Sys_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   } elseif { $Video_Processing_Sys_0 eq "" } {
-     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   }
-  
   # Create instance: dvi2rgb_0, and set properties
   set dvi2rgb_0 [ create_bd_cell -type ip -vlnv digilentinc.com:ip:dvi2rgb:1.9 dvi2rgb_0 ]
   set_property -dict [ list \
    CONFIG.kClkRange {3} \
    CONFIG.kDebug {false} \
+   CONFIG.kEdidFileName {dgl_720p_cea.data} \
    CONFIG.kEnableSerialClkOutput {false} \
    CONFIG.kRstActiveHigh {true} \
  ] $dvi2rgb_0
 
-  # Create instance: fifo_1280_0, and set properties
-  set fifo_1280_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:fifo_generator:13.2 fifo_1280_0 ]
-  set_property -dict [ list \
-   CONFIG.Data_Count_Width {12} \
-   CONFIG.Full_Threshold_Assert_Value {824} \
-   CONFIG.Full_Threshold_Negate_Value {823} \
-   CONFIG.Input_Data_Width {24} \
-   CONFIG.Input_Depth {4096} \
-   CONFIG.Output_Data_Width {24} \
-   CONFIG.Output_Depth {4096} \
-   CONFIG.Programmable_Empty_Type {No_Programmable_Empty_Threshold} \
-   CONFIG.Programmable_Full_Type {Single_Programmable_Full_Threshold_Constant} \
-   CONFIG.Read_Data_Count_Width {12} \
-   CONFIG.Reset_Pin {false} \
-   CONFIG.Reset_Type {Asynchronous_Reset} \
-   CONFIG.Use_Dout_Reset {false} \
-   CONFIG.Write_Data_Count_Width {12} \
- ] $fifo_1280_0
-
-  # Create instance: fifo_1280_1, and set properties
-  set fifo_1280_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:fifo_generator:13.2 fifo_1280_1 ]
-  set_property -dict [ list \
-   CONFIG.Data_Count_Width {12} \
-   CONFIG.Full_Threshold_Assert_Value {824} \
-   CONFIG.Full_Threshold_Negate_Value {823} \
-   CONFIG.Input_Data_Width {24} \
-   CONFIG.Input_Depth {4096} \
-   CONFIG.Output_Data_Width {24} \
-   CONFIG.Output_Depth {4096} \
-   CONFIG.Programmable_Empty_Type {No_Programmable_Empty_Threshold} \
-   CONFIG.Programmable_Full_Type {Single_Programmable_Full_Threshold_Constant} \
-   CONFIG.Read_Data_Count_Width {12} \
-   CONFIG.Reset_Pin {false} \
-   CONFIG.Reset_Type {Asynchronous_Reset} \
-   CONFIG.Use_Dout_Reset {false} \
-   CONFIG.Write_Data_Count_Width {12} \
- ] $fifo_1280_1
-
-  # Create instance: fifo_1280_2, and set properties
-  set fifo_1280_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:fifo_generator:13.2 fifo_1280_2 ]
-  set_property -dict [ list \
-   CONFIG.Data_Count_Width {12} \
-   CONFIG.Full_Threshold_Assert_Value {824} \
-   CONFIG.Full_Threshold_Negate_Value {823} \
-   CONFIG.Input_Data_Width {24} \
-   CONFIG.Input_Depth {4096} \
-   CONFIG.Output_Data_Width {24} \
-   CONFIG.Output_Depth {4096} \
-   CONFIG.Programmable_Empty_Type {No_Programmable_Empty_Threshold} \
-   CONFIG.Programmable_Full_Type {Single_Programmable_Full_Threshold_Constant} \
-   CONFIG.Read_Data_Count_Width {12} \
-   CONFIG.Reset_Pin {false} \
-   CONFIG.Reset_Type {Asynchronous_Reset} \
-   CONFIG.Use_Dout_Reset {false} \
-   CONFIG.Write_Data_Count_Width {12} \
- ] $fifo_1280_2
+  # Create instance: image_processing_system
+  create_hier_cell_image_processing_system [current_bd_instance .] image_processing_system
 
   # Create instance: processing_system7_0, and set properties
   set processing_system7_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 processing_system7_0 ]
@@ -795,40 +1078,31 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins processing_system7_0/FIXED_IO]
 
   # Create port connections
-  connect_bd_net -net RGB_to_Gray_0_Gray [get_bd_pins RGB_to_Gray_0/Gray] [get_bd_pins Video_Processing_Sys_0/in_preProcess] [get_bd_pins fifo_1280_2/din]
-  connect_bd_net -net Shift_register_0_line [get_bd_pins Shift_register_0/line] [get_bd_pins Video_Processing_Sys_0/in_M1]
-  connect_bd_net -net Shift_register_1_line [get_bd_pins Shift_register_1/line] [get_bd_pins Video_Processing_Sys_0/in_M2]
-  connect_bd_net -net Shift_register_2_line [get_bd_pins Shift_register_2/line] [get_bd_pins Video_Processing_Sys_0/in_M3]
-  connect_bd_net -net VCC_dout [get_bd_ports hdmi_rx_hpa] [get_bd_pins VCC/dout] [get_bd_pins fifo_1280_2/wr_en]
-  connect_bd_net -net Video_Processing_Sys_0_EN_Gray [get_bd_pins RGB_to_Gray_0/en] [get_bd_pins Video_Processing_Sys_0/EN_Gray]
-  connect_bd_net -net Video_Processing_Sys_0_Led [get_bd_ports led] [get_bd_pins Video_Processing_Sys_0/Led]
-  connect_bd_net -net Video_Processing_Sys_0_out_Data [get_bd_pins Video_Processing_Sys_0/out_Data] [get_bd_pins rgb2dvi_0/vid_pData]
-  connect_bd_net -net Video_Processing_Sys_0_out_HSync [get_bd_pins Video_Processing_Sys_0/out_HSync] [get_bd_pins rgb2dvi_0/vid_pHSync]
-  connect_bd_net -net Video_Processing_Sys_0_out_Pixel_Clk [get_bd_pins Video_Processing_Sys_0/out_Pixel_Clk] [get_bd_pins rgb2dvi_0/PixelClk]
-  connect_bd_net -net Video_Processing_Sys_0_out_VDE [get_bd_pins Video_Processing_Sys_0/out_VDE] [get_bd_pins rgb2dvi_0/vid_pVDE]
-  connect_bd_net -net Video_Processing_Sys_0_out_VSync [get_bd_pins Video_Processing_Sys_0/out_VSync] [get_bd_pins rgb2dvi_0/vid_pVSync]
-  connect_bd_net -net dvi2rgb_0_PixelClk [get_bd_pins RGB_to_Gray_0/clk] [get_bd_pins Shift_register_0/clk] [get_bd_pins Shift_register_1/clk] [get_bd_pins Shift_register_2/clk] [get_bd_pins Video_Processing_Sys_0/in_Pixel_Clk] [get_bd_pins dvi2rgb_0/PixelClk] [get_bd_pins fifo_1280_0/clk] [get_bd_pins fifo_1280_1/clk] [get_bd_pins fifo_1280_2/clk]
-  connect_bd_net -net dvi2rgb_0_vid_pData [get_bd_pins RGB_to_Gray_0/RGB] [get_bd_pins dvi2rgb_0/vid_pData]
-  connect_bd_net -net dvi2rgb_0_vid_pHSync [get_bd_pins Video_Processing_Sys_0/in_HSync] [get_bd_pins dvi2rgb_0/vid_pHSync]
-  connect_bd_net -net dvi2rgb_0_vid_pVDE [get_bd_pins Video_Processing_Sys_0/in_VDE] [get_bd_pins dvi2rgb_0/vid_pVDE]
-  connect_bd_net -net dvi2rgb_0_vid_pVSync [get_bd_pins Video_Processing_Sys_0/in_VSync] [get_bd_pins dvi2rgb_0/vid_pVSync]
-  connect_bd_net -net fifo_1280_0_dout [get_bd_pins Shift_register_0/pixel] [get_bd_pins fifo_1280_0/dout]
-  connect_bd_net -net fifo_1280_0_full [get_bd_pins Shift_register_0/en] [get_bd_pins Shift_register_1/en] [get_bd_pins Shift_register_2/en] [get_bd_pins Video_Processing_Sys_0/in_Ready] [get_bd_pins fifo_1280_0/prog_full] [get_bd_pins fifo_1280_0/rd_en]
-  connect_bd_net -net fifo_1280_1_dout [get_bd_pins Shift_register_1/pixel] [get_bd_pins fifo_1280_0/din] [get_bd_pins fifo_1280_1/dout]
-  connect_bd_net -net fifo_1280_1_full [get_bd_pins fifo_1280_0/wr_en] [get_bd_pins fifo_1280_1/prog_full] [get_bd_pins fifo_1280_1/rd_en]
-  connect_bd_net -net fifo_1280_2_dout [get_bd_pins Shift_register_2/pixel] [get_bd_pins fifo_1280_1/din] [get_bd_pins fifo_1280_2/dout]
-  connect_bd_net -net fifo_1280_2_full [get_bd_pins fifo_1280_1/wr_en] [get_bd_pins fifo_1280_2/prog_full] [get_bd_pins fifo_1280_2/rd_en]
+  connect_bd_net -net VCC1_dout [get_bd_ports hdmi_rx_hpa] [get_bd_pins VCC1/dout]
+  connect_bd_net -net Video_Processing_Sys_0_out_HSync [get_bd_pins image_processing_system/out_HSync] [get_bd_pins rgb2dvi_0/vid_pHSync]
+  connect_bd_net -net Video_Processing_Sys_0_out_Pixel_Clk [get_bd_pins image_processing_system/out_Pixel_Clk] [get_bd_pins rgb2dvi_0/PixelClk]
+  connect_bd_net -net Video_Processing_Sys_0_out_VDE [get_bd_pins image_processing_system/out_VDE] [get_bd_pins rgb2dvi_0/vid_pVDE]
+  connect_bd_net -net Video_Processing_Sys_0_out_VSync [get_bd_pins image_processing_system/out_VSync] [get_bd_pins rgb2dvi_0/vid_pVSync]
+  connect_bd_net -net dvi2rgb_0_PixelClk [get_bd_pins dvi2rgb_0/PixelClk] [get_bd_pins image_processing_system/in_Pixel_Clk]
+  connect_bd_net -net dvi2rgb_0_vid_pData [get_bd_pins dvi2rgb_0/vid_pData] [get_bd_pins image_processing_system/RGB]
+  connect_bd_net -net dvi2rgb_0_vid_pHSync [get_bd_pins dvi2rgb_0/vid_pHSync] [get_bd_pins image_processing_system/in_HSync]
+  connect_bd_net -net dvi2rgb_0_vid_pVDE [get_bd_pins dvi2rgb_0/vid_pVDE] [get_bd_pins image_processing_system/in_VDE]
+  connect_bd_net -net dvi2rgb_0_vid_pVSync [get_bd_pins dvi2rgb_0/vid_pVSync] [get_bd_pins image_processing_system/in_VSync]
+  connect_bd_net -net en_0_1 [get_bd_ports switch_0] [get_bd_pins image_processing_system/en_gray]
+  connect_bd_net -net en_0_2 [get_bd_ports switch_1] [get_bd_pins image_processing_system/en_filter]
   connect_bd_net -net hdmi_rx_clk_n_1 [get_bd_ports hdmi_rx_clk_n] [get_bd_pins dvi2rgb_0/TMDS_Clk_n]
   connect_bd_net -net hdmi_rx_clk_p_1 [get_bd_ports hdmi_rx_clk_p] [get_bd_pins dvi2rgb_0/TMDS_Clk_p]
   connect_bd_net -net hdmi_rx_data_n_1 [get_bd_ports hdmi_rx_data_n] [get_bd_pins dvi2rgb_0/TMDS_Data_n]
   connect_bd_net -net hdmi_rx_data_p_1 [get_bd_ports hdmi_rx_data_p] [get_bd_pins dvi2rgb_0/TMDS_Data_p]
+  connect_bd_net -net image_filter_out_Pixel [get_bd_pins image_processing_system/out_Pixel] [get_bd_pins rgb2dvi_0/vid_pData]
+  connect_bd_net -net image_filter_status [get_bd_ports led_1] [get_bd_pins image_processing_system/status_filter]
   connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK]
-  connect_bd_net -net processing_system7_0_FCLK_CLK1 [get_bd_pins dvi2rgb_0/RefClk] [get_bd_pins processing_system7_0/FCLK_CLK1]
+  connect_bd_net -net processing_system7_0_FCLK_CLK1 [get_bd_pins dvi2rgb_0/RefClk] [get_bd_pins image_processing_system/clk] [get_bd_pins processing_system7_0/FCLK_CLK1]
   connect_bd_net -net rgb2dvi_0_TMDS_Clk_n [get_bd_ports hdmi_tx_clk_n] [get_bd_pins rgb2dvi_0/TMDS_Clk_n]
   connect_bd_net -net rgb2dvi_0_TMDS_Clk_p [get_bd_ports hdmi_tx_clk_p] [get_bd_pins rgb2dvi_0/TMDS_Clk_p]
   connect_bd_net -net rgb2dvi_0_TMDS_Data_n [get_bd_ports hdmi_tx_data_n] [get_bd_pins rgb2dvi_0/TMDS_Data_n]
   connect_bd_net -net rgb2dvi_0_TMDS_Data_p [get_bd_ports hdmi_tx_data_p] [get_bd_pins rgb2dvi_0/TMDS_Data_p]
-  connect_bd_net -net switch_1 [get_bd_ports switch] [get_bd_pins Video_Processing_Sys_0/in_Switch]
+  connect_bd_net -net rgb2gray_status [get_bd_ports led_0] [get_bd_pins image_processing_system/status_gray]
 
   # Create address segments
 

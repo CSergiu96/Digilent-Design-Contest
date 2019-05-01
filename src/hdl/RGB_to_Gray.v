@@ -24,7 +24,8 @@ module RGB_to_Gray(
     input [23:0] RGB,
     input en,
     input clk,
-    output [23:0] Gray
+    output [23:0] G,
+    output status
     );
 
     reg  [23:0] tempPixel;
@@ -33,7 +34,9 @@ module RGB_to_Gray(
     wire [7:0]  BLUE;
     wire [7:0]  GREEN;
     wire [7:0]  RED;
-    assign Gray     = rgb2gray;
+    
+    assign status   = en;
+    assign G        = rgb2gray;
     assign BLUE     = tempPixel[7:0];
     assign GREEN    = tempPixel[15:8];
     assign RED      = tempPixel[23:16];

@@ -21,48 +21,76 @@
 
 
 module Video_Processing_System(
-    input [23:0] [2:0]in_M1,
-    input [23:0] [2:0]in_M2,
-    input [23:0] [2:0]in_M3,
-    input [23:0] in_preProcess,
+    input [71:0]in_M0,
+    input [71:0]in_M1,
+    input [71:0]in_M2,
+    input [23:0] in_Pixel,
     input in_HSync,
     input in_VSync,
     input in_VDE,
     input in_Pixel_Clk,
-    input in_Ready,
-    input [3:0] in_Switch,
-    input Reset,
-    output [23:0] out_Data,
+    input en,
+    input clk,
+    output [23:0] out_Pixel,
     output out_HSync,
     output out_VSync,
     output out_VDE,
     output out_Pixel_Clk,
-    output EN_Gray,
-    output [3:0] Led
+    output status
     );
 
-reg [23:0] resultPixel;   
-reg [3:0] leds;
+reg  [23:0] resultPixel;
+reg  [7:0] conv;
+wire [7:0] p0;
+wire [7:0] p1;
+wire [7:0] p2;
+wire [7:0] p3;
+wire [7:0] p4;
+wire [7:0] p5;
+wire [7:0] p6;
+wire [7:0] p7;
+wire [7:0] p8;
 
-assign Led           = leds;
-assign EN_Gray       = in_Switch[0];
-assign out_Data      = resultPixel;
+wire signed [10:0] gx,gy;
+wire signed [10:0] abs_gx,abs_gy;	
+wire [10:0] sum;
+assign p0 = in_M0[7:0];
+assign p1 = in_M0[31:24];
+assign p2 = in_M0[55:48];
+assign p3 = in_M1[7:0];
+assign p4 = in_M1[31:24];
+assign p5 = in_M1[55:48];
+assign p6 = in_M2[7:0];
+assign p7 = in_M2[31:24];
+assign p8 = in_M2[55:48];
+assign gx=((p2-p0)+((p5-p3)<<1)+(p8-p6)); 
+assign gy=((p0-p6)+((p1-p7)<<1)+(p2-p8)); 
+assign abs_gx = (gx[10]? ~gx+1 : gx);	 
+assign abs_gy = (gy[10]? ~gy+1 : gy);	 
+assign sum = (abs_gx+abs_gy);	
+
+assign status        = en;
+assign out_Pixel     = resultPixel;
 assign out_HSync     = in_HSync;
 assign out_VSync     = in_VSync;
 assign out_VDE       = in_VDE;
 assign out_Pixel_Clk = in_Pixel_Clk;
 
-always @ (posedge in_Pixel_Clk)
-begin
-    if(in_Switch[1] == 0)
-    begin
-        resultPixel = in_preProcess;
-    end
-    else if (in_Ready == 1)
-    begin
-        resultPixel = (4 * in_M2[1]) -in_M1[1] - in_M2[0] - in_M2[2] - in_M3[1]; 
+always @ (posedge clk) begin
+    if(en == 0) begin
+        resultPixel = in_Pixel;
     end else begin
-        resultPixel = 0;
+        /*conv = (4 * p5) - p2 - p4 - p6 - p8;
+        if(conv > 0) begin
+            resultPixel = 24'hFFFFFF; 
+        end else begin
+            resultPixel = 0;
+        end*/
+        conv = (|sum[10:8])?8'hff : sum[7:0];
+        resultPixel[7:0] = conv;
+        resultPixel[15:8] = conv;
+        resultPixel[23:16] = conv;
+           
     end
 end        
     
