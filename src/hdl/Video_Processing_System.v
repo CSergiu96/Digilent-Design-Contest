@@ -25,20 +25,15 @@ module Video_Processing_System(
     input [71:0]in_M1,
     input [71:0]in_M2,
     input [23:0] in_Pixel,
-    input in_HSync,
-    input in_VSync,
-    input in_VDE,
     input in_Pixel_Clk,
     input en,
     input clk,
     output [23:0] out_Pixel,
-    output out_HSync,
-    output out_VSync,
-    output out_VDE,
-    output out_Pixel_Clk,
+    output proj_pixel,
     output status
     );
 
+reg  value;
 reg  [23:0] resultPixel;
 reg  [7:0] conv;
 wire [7:0] p0;
@@ -54,6 +49,7 @@ wire [7:0] p8;
 wire signed [10:0] gx,gy;
 wire signed [10:0] abs_gx,abs_gy;	
 wire [10:0] sum;
+assign proj_pixel = value;
 assign p0 = in_M0[7:0];
 assign p1 = in_M0[31:24];
 assign p2 = in_M0[55:48];
@@ -68,13 +64,8 @@ assign gy=((p0-p6)+((p1-p7)<<1)+(p2-p8));
 assign abs_gx = (gx[10]? ~gx+1 : gx);	 
 assign abs_gy = (gy[10]? ~gy+1 : gy);	 
 assign sum = (abs_gx+abs_gy);	
-
 assign status        = en;
 assign out_Pixel     = resultPixel;
-assign out_HSync     = in_HSync;
-assign out_VSync     = in_VSync;
-assign out_VDE       = in_VDE;
-assign out_Pixel_Clk = in_Pixel_Clk;
 
 always @ (posedge clk) begin
     if(en == 0) begin
@@ -90,7 +81,11 @@ always @ (posedge clk) begin
         resultPixel[7:0] = conv;
         resultPixel[15:8] = conv;
         resultPixel[23:16] = conv;
-           
+        if(conv > 60) begin
+            value = 1;
+        end else begin
+            value = 0;
+        end
     end
 end        
     

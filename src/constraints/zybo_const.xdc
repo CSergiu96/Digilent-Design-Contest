@@ -1,7 +1,7 @@
 set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 #Clock signal
-#set_property -dict { PACKAGE_PIN K17   IOSTANDARD LVCMOS33 } [get_ports { sys_clock }]; #IO_L12P_T1_MRCC_35 Sch=sysclk
-#create_clock -add -name sys_clk_pin -period 8 -waveform {0 4} [get_ports { sys_clock }];
+set_property -dict { PACKAGE_PIN K17   IOSTANDARD LVCMOS33 } [get_ports { sys_clock }]; #IO_L12P_T1_MRCC_35 Sch=sysclk
+create_clock -add -name sys_clk_pin -period 8 -waveform {0 4} [get_ports { sys_clock }];
 create_clock -period 13.468 -waveform {0.000 5.000} [get_ports hdmi_rx_clk_p]
 #HDMI RX
 set_property -dict { PACKAGE_PIN U19   IOSTANDARD TMDS_33     } [get_ports { hdmi_rx_clk_n }]; #IO_L12N_T1_MRCC_34 Sch=hdmi_rx_clk_n
@@ -35,3 +35,9 @@ set_property -dict { PACKAGE_PIN M14   IOSTANDARD LVCMOS33 } [get_ports { led_0 
 set_property -dict { PACKAGE_PIN M15   IOSTANDARD LVCMOS33 } [get_ports { led_1 }]; #IO_L23N_T3_35 Sch=led[1]
 set_property -dict { PACKAGE_PIN G14   IOSTANDARD LVCMOS33 } [get_ports { led_2 }]; #IO_0_35 Sch=led[2]
 set_property -dict { PACKAGE_PIN D18   IOSTANDARD LVCMOS33 } [get_ports { led_3 }]; #IO_L3N_T0_DQS_AD1N_35 Sch=led[3]
+##Projector
+set_property -dict { PACKAGE_PIN V12   IOSTANDARD LVCMOS33 } [get_ports { proj_hsync }]; #IO_L4P_T0_34 Sch=je[1]
+set_property -dict { PACKAGE_PIN W16   IOSTANDARD LVCMOS33 } [get_ports { proj_vsync }]; #IO_L18N_T2_34 Sch=je[2]
+set_property -dict { PACKAGE_PIN J15   IOSTANDARD LVCMOS33 } [get_ports { proj_data_en }]; #IO_25_35 Sch=je[3]
+set_property -dict { PACKAGE_PIN H15   IOSTANDARD LVCMOS33 } [get_ports { proj_pclk }]; #IO_L19P_T3_35 Sch=je[4]
+set_property -dict { PACKAGE_PIN V13   IOSTANDARD LVCMOS33 } [get_ports { proj_data }]; #IO_L3N_T0_DQS_34 Sch=je[7]

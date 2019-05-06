@@ -415,13 +415,13 @@ proc create_hier_cell_triple_buffering_720p { parentCell nameHier } {
   current_bd_instance $oldCurInst
 }
 
-# Hierarchical cell: image_processing_system
-proc create_hier_cell_image_processing_system { parentCell nameHier } {
+# Hierarchical cell: video_out
+proc create_hier_cell_video_out { parentCell nameHier } {
 
   variable script_folder
 
   if { $parentCell eq "" || $nameHier eq "" } {
-     catch {common::send_msg_id "BD_TCL-102" "ERROR" "create_hier_cell_image_processing_system() - Empty argument(s)!"}
+     catch {common::send_msg_id "BD_TCL-102" "ERROR" "create_hier_cell_video_out() - Empty argument(s)!"}
      return
   }
 
@@ -452,82 +452,89 @@ proc create_hier_cell_image_processing_system { parentCell nameHier } {
   # Create interface pins
 
   # Create pins
-  create_bd_pin -dir I -from 23 -to 0 RGB
-  create_bd_pin -dir I -type clk clk
-  create_bd_pin -dir I en_filter
-  create_bd_pin -dir I en_gray
-  create_bd_pin -dir I in_HSync
-  create_bd_pin -dir I -type clk in_Pixel_Clk
-  create_bd_pin -dir I in_VDE
-  create_bd_pin -dir I in_VSync
-  create_bd_pin -dir O out_HSync
-  create_bd_pin -dir O -from 23 -to 0 out_Pixel
-  create_bd_pin -dir O -type clk out_Pixel_Clk
-  create_bd_pin -dir O out_VDE
-  create_bd_pin -dir O out_VSync
-  create_bd_pin -dir O status_filter
-  create_bd_pin -dir O status_gray
+  create_bd_pin -dir I active_video_in
+  create_bd_pin -dir O -from 0 -to 0 hdmi_rx_hpa
+  create_bd_pin -dir O -type clk hdmi_tx_clk_n
+  create_bd_pin -dir O -type clk hdmi_tx_clk_p
+  create_bd_pin -dir O -from 2 -to 0 hdmi_tx_data_n
+  create_bd_pin -dir O -from 2 -to 0 hdmi_tx_data_p
+  create_bd_pin -dir I hsync_in
+  create_bd_pin -dir I -type clk pclk_in
+  create_bd_pin -dir I -from 23 -to 0 pixel_in
+  create_bd_pin -dir O proj_data_en
+  create_bd_pin -dir O proj_hsync
+  create_bd_pin -dir O proj_vsync
+  create_bd_pin -dir I vsync_in
 
-  # Create instance: image_filter, and set properties
-  set block_name Video_Processing_System
-  set block_cell_name image_filter
-  if { [catch {set image_filter [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   } elseif { $image_filter eq "" } {
-     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   }
-  
-  # Create instance: rgb2gray, and set properties
-  set block_name RGB_to_Gray
-  set block_cell_name rgb2gray
-  if { [catch {set rgb2gray [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   } elseif { $rgb2gray eq "" } {
-     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   }
-  
-  # Create instance: triple_buffering_720p
-  create_hier_cell_triple_buffering_720p $hier_obj triple_buffering_720p
+  # Create instance: VCC1, and set properties
+  set VCC1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 VCC1 ]
+
+  # Create instance: rgb2dvi_0, and set properties
+  set rgb2dvi_0 [ create_bd_cell -type ip -vlnv digilentinc.com:ip:rgb2dvi:1.4 rgb2dvi_0 ]
+  set_property -dict [ list \
+   CONFIG.kClkPrimitive {PLL} \
+   CONFIG.kClkRange {3} \
+   CONFIG.kGenerateSerialClk {true} \
+ ] $rgb2dvi_0
+
+  # Create instance: v_tc_0, and set properties
+  set v_tc_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:v_tc:6.1 v_tc_0 ]
+  set_property -dict [ list \
+   CONFIG.GEN_AVIDEO_POLARITY {High} \
+   CONFIG.GEN_F0_VBLANK_HEND {640} \
+   CONFIG.GEN_F0_VBLANK_HSTART {640} \
+   CONFIG.GEN_F0_VFRAME_SIZE {525} \
+   CONFIG.GEN_F0_VSYNC_HEND {640} \
+   CONFIG.GEN_F0_VSYNC_HSTART {640} \
+   CONFIG.GEN_F0_VSYNC_VEND {491} \
+   CONFIG.GEN_F0_VSYNC_VSTART {489} \
+   CONFIG.GEN_F1_VBLANK_HEND {640} \
+   CONFIG.GEN_F1_VBLANK_HSTART {640} \
+   CONFIG.GEN_F1_VFRAME_SIZE {525} \
+   CONFIG.GEN_F1_VSYNC_HEND {640} \
+   CONFIG.GEN_F1_VSYNC_HSTART {640} \
+   CONFIG.GEN_F1_VSYNC_VEND {491} \
+   CONFIG.GEN_F1_VSYNC_VSTART {489} \
+   CONFIG.GEN_HACTIVE_SIZE {640} \
+   CONFIG.GEN_HFRAME_SIZE {800} \
+   CONFIG.GEN_HSYNC_END {752} \
+   CONFIG.GEN_HSYNC_START {656} \
+   CONFIG.GEN_VACTIVE_SIZE {480} \
+   CONFIG.HAS_AXI4_LITE {false} \
+   CONFIG.VIDEO_MODE {640x480p} \
+   CONFIG.horizontal_blank_detection {false} \
+   CONFIG.horizontal_blank_generation {false} \
+   CONFIG.vertical_blank_detection {false} \
+   CONFIG.vertical_blank_generation {false} \
+ ] $v_tc_0
 
   # Create port connections
-  connect_bd_net -net Video_Processing_Sys_0_out_HSync [get_bd_pins out_HSync] [get_bd_pins image_filter/out_HSync]
-  connect_bd_net -net Video_Processing_Sys_0_out_Pixel_Clk [get_bd_pins out_Pixel_Clk] [get_bd_pins image_filter/out_Pixel_Clk]
-  connect_bd_net -net Video_Processing_Sys_0_out_VDE [get_bd_pins out_VDE] [get_bd_pins image_filter/out_VDE]
-  connect_bd_net -net Video_Processing_Sys_0_out_VSync [get_bd_pins out_VSync] [get_bd_pins image_filter/out_VSync]
-  connect_bd_net -net clk_1 [get_bd_pins clk] [get_bd_pins image_filter/clk]
-  connect_bd_net -net dvi2rgb_0_PixelClk [get_bd_pins in_Pixel_Clk] [get_bd_pins image_filter/in_Pixel_Clk] [get_bd_pins rgb2gray/clk] [get_bd_pins triple_buffering_720p/clk]
-  connect_bd_net -net dvi2rgb_0_vid_pData [get_bd_pins RGB] [get_bd_pins rgb2gray/RGB]
-  connect_bd_net -net dvi2rgb_0_vid_pHSync [get_bd_pins in_HSync] [get_bd_pins image_filter/in_HSync]
-  connect_bd_net -net dvi2rgb_0_vid_pVDE [get_bd_pins in_VDE] [get_bd_pins image_filter/in_VDE]
-  connect_bd_net -net dvi2rgb_0_vid_pVSync [get_bd_pins in_VSync] [get_bd_pins image_filter/in_VSync]
-  connect_bd_net -net en_0_1 [get_bd_pins en_gray] [get_bd_pins rgb2gray/en]
-  connect_bd_net -net en_0_2 [get_bd_pins en_filter] [get_bd_pins image_filter/en]
-  connect_bd_net -net image_filter_out_Pixel [get_bd_pins out_Pixel] [get_bd_pins image_filter/out_Pixel]
-  connect_bd_net -net image_filter_status [get_bd_pins status_filter] [get_bd_pins image_filter/status]
-  connect_bd_net -net rgb2gray_G [get_bd_pins image_filter/in_Pixel] [get_bd_pins rgb2gray/G] [get_bd_pins triple_buffering_720p/pixel]
-  connect_bd_net -net rgb2gray_status [get_bd_pins status_gray] [get_bd_pins rgb2gray/status]
-  connect_bd_net -net triple_buffering_720p_mat_center [get_bd_pins image_filter/in_M1] [get_bd_pins triple_buffering_720p/mat_center]
-  connect_bd_net -net triple_buffering_720p_mat_high [get_bd_pins image_filter/in_M2] [get_bd_pins triple_buffering_720p/mat_high]
-  connect_bd_net -net triple_buffering_720p_mat_low [get_bd_pins image_filter/in_M0] [get_bd_pins triple_buffering_720p/mat_low]
+  connect_bd_net -net VCC1_dout [get_bd_pins hdmi_rx_hpa] [get_bd_pins VCC1/dout]
+  connect_bd_net -net dvi2rgb_0_PixelClk [get_bd_pins pclk_in] [get_bd_pins rgb2dvi_0/PixelClk] [get_bd_pins v_tc_0/clk]
+  connect_bd_net -net dvi2rgb_0_vid_pHSync [get_bd_pins hsync_in] [get_bd_pins rgb2dvi_0/vid_pHSync] [get_bd_pins v_tc_0/hsync_in]
+  connect_bd_net -net dvi2rgb_0_vid_pVDE [get_bd_pins active_video_in] [get_bd_pins rgb2dvi_0/vid_pVDE] [get_bd_pins v_tc_0/active_video_in]
+  connect_bd_net -net dvi2rgb_0_vid_pVSync [get_bd_pins vsync_in] [get_bd_pins rgb2dvi_0/vid_pVSync] [get_bd_pins v_tc_0/vsync_in]
+  connect_bd_net -net image_processing_system_out_Pixel [get_bd_pins pixel_in] [get_bd_pins rgb2dvi_0/vid_pData]
+  connect_bd_net -net rgb2dvi_0_TMDS_Clk_n [get_bd_pins hdmi_tx_clk_n] [get_bd_pins rgb2dvi_0/TMDS_Clk_n]
+  connect_bd_net -net rgb2dvi_0_TMDS_Clk_p [get_bd_pins hdmi_tx_clk_p] [get_bd_pins rgb2dvi_0/TMDS_Clk_p]
+  connect_bd_net -net rgb2dvi_0_TMDS_Data_n [get_bd_pins hdmi_tx_data_n] [get_bd_pins rgb2dvi_0/TMDS_Data_n]
+  connect_bd_net -net rgb2dvi_0_TMDS_Data_p [get_bd_pins hdmi_tx_data_p] [get_bd_pins rgb2dvi_0/TMDS_Data_p]
+  connect_bd_net -net v_tc_0_active_video_out [get_bd_pins proj_data_en] [get_bd_pins v_tc_0/active_video_out]
+  connect_bd_net -net v_tc_0_hsync_out [get_bd_pins proj_hsync] [get_bd_pins v_tc_0/hsync_out]
+  connect_bd_net -net v_tc_0_vsync_out [get_bd_pins proj_vsync] [get_bd_pins v_tc_0/vsync_out]
 
   # Restore current instance
   current_bd_instance $oldCurInst
 }
 
-
-# Procedure to create entire design; Provide argument to make
-# procedure reusable. If parentCell is "", will use root.
-proc create_root_design { parentCell } {
+# Hierarchical cell: processor
+proc create_hier_cell_processor { parentCell nameHier } {
 
   variable script_folder
-  variable design_name
 
-  if { $parentCell eq "" } {
-     set parentCell [get_bd_cells /]
+  if { $parentCell eq "" || $nameHier eq "" } {
+     catch {common::send_msg_id "BD_TCL-102" "ERROR" "create_hier_cell_processor() - Empty argument(s)!"}
+     return
   }
 
   # Get object for parentCell
@@ -550,42 +557,30 @@ proc create_root_design { parentCell } {
   # Set parent object as current
   current_bd_instance $parentObj
 
+  # Create cell and set as current instance
+  set hier_obj [create_bd_cell -type hier $nameHier]
+  current_bd_instance $hier_obj
 
-  # Create interface ports
-  set DDR [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:ddrx_rtl:1.0 DDR ]
-  set FIXED_IO [ create_bd_intf_port -mode Master -vlnv xilinx.com:display_processing_system7:fixedio_rtl:1.0 FIXED_IO ]
-  set hdmi_rx_ddc [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:iic_rtl:1.0 hdmi_rx_ddc ]
+  # Create interface pins
+  create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:ddrx_rtl:1.0 DDR
+  create_bd_intf_pin -mode Master -vlnv xilinx.com:display_processing_system7:fixedio_rtl:1.0 FIXED_IO
 
-  # Create ports
-  set hdmi_rx_clk_n [ create_bd_port -dir I -type clk hdmi_rx_clk_n ]
-  set hdmi_rx_clk_p [ create_bd_port -dir I -type clk hdmi_rx_clk_p ]
-  set hdmi_rx_data_n [ create_bd_port -dir I -from 2 -to 0 hdmi_rx_data_n ]
-  set hdmi_rx_data_p [ create_bd_port -dir I -from 2 -to 0 hdmi_rx_data_p ]
-  set hdmi_rx_hpa [ create_bd_port -dir O -from 0 -to 0 hdmi_rx_hpa ]
-  set hdmi_tx_clk_n [ create_bd_port -dir O -type clk hdmi_tx_clk_n ]
-  set hdmi_tx_clk_p [ create_bd_port -dir O -type clk hdmi_tx_clk_p ]
-  set hdmi_tx_data_n [ create_bd_port -dir O -from 2 -to 0 hdmi_tx_data_n ]
-  set hdmi_tx_data_p [ create_bd_port -dir O -from 2 -to 0 hdmi_tx_data_p ]
-  set led_0 [ create_bd_port -dir O led_0 ]
-  set led_1 [ create_bd_port -dir O led_1 ]
-  set switch_0 [ create_bd_port -dir I switch_0 ]
-  set switch_1 [ create_bd_port -dir I switch_1 ]
+  # Create pins
+  create_bd_pin -dir O -from 0 -to 0 gpio_1
+  create_bd_pin -dir O -from 0 -to 0 gpio_2
 
-  # Create instance: VCC1, and set properties
-  set VCC1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 VCC1 ]
-
-  # Create instance: dvi2rgb_0, and set properties
-  set dvi2rgb_0 [ create_bd_cell -type ip -vlnv digilentinc.com:ip:dvi2rgb:1.9 dvi2rgb_0 ]
+  # Create instance: axi_gpio_0, and set properties
+  set axi_gpio_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio:2.0 axi_gpio_0 ]
   set_property -dict [ list \
-   CONFIG.kClkRange {3} \
-   CONFIG.kDebug {false} \
-   CONFIG.kEdidFileName {dgl_720p_cea.data} \
-   CONFIG.kEnableSerialClkOutput {false} \
-   CONFIG.kRstActiveHigh {true} \
- ] $dvi2rgb_0
-
-  # Create instance: image_processing_system
-  create_hier_cell_image_processing_system [current_bd_instance .] image_processing_system
+   CONFIG.C_ALL_INPUTS {0} \
+   CONFIG.C_ALL_OUTPUTS {1} \
+   CONFIG.C_ALL_OUTPUTS_2 {1} \
+   CONFIG.C_GPIO2_WIDTH {1} \
+   CONFIG.C_GPIO_WIDTH {1} \
+   CONFIG.C_IS_DUAL {1} \
+   CONFIG.GPIO_BOARD_INTERFACE {Custom} \
+   CONFIG.USE_BOARD_FLOW {true} \
+ ] $axi_gpio_0
 
   # Create instance: processing_system7_0, and set properties
   set processing_system7_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 processing_system7_0 ]
@@ -595,7 +590,7 @@ proc create_root_design { parentCell } {
    CONFIG.PCW_ACT_DCI_PERIPHERAL_FREQMHZ {10.158730} \
    CONFIG.PCW_ACT_ENET0_PERIPHERAL_FREQMHZ {125.000000} \
    CONFIG.PCW_ACT_ENET1_PERIPHERAL_FREQMHZ {10.000000} \
-   CONFIG.PCW_ACT_FPGA0_PERIPHERAL_FREQMHZ {100.000000} \
+   CONFIG.PCW_ACT_FPGA0_PERIPHERAL_FREQMHZ {50.000000} \
    CONFIG.PCW_ACT_FPGA1_PERIPHERAL_FREQMHZ {200.000000} \
    CONFIG.PCW_ACT_FPGA2_PERIPHERAL_FREQMHZ {10.000000} \
    CONFIG.PCW_ACT_FPGA3_PERIPHERAL_FREQMHZ {10.000000} \
@@ -618,7 +613,7 @@ proc create_root_design { parentCell } {
    CONFIG.PCW_ARMPLL_CTRL_FBDIV {40} \
    CONFIG.PCW_CAN_PERIPHERAL_DIVISOR0 {1} \
    CONFIG.PCW_CAN_PERIPHERAL_DIVISOR1 {1} \
-   CONFIG.PCW_CLK0_FREQ {100000000} \
+   CONFIG.PCW_CLK0_FREQ {50000000} \
    CONFIG.PCW_CLK1_FREQ {200000000} \
    CONFIG.PCW_CLK2_FREQ {10000000} \
    CONFIG.PCW_CLK3_FREQ {10000000} \
@@ -665,14 +660,16 @@ proc create_root_design { parentCell } {
    CONFIG.PCW_ENET_RESET_SELECT {Share reset pin} \
    CONFIG.PCW_EN_4K_TIMER {0} \
    CONFIG.PCW_EN_CLK1_PORT {1} \
+   CONFIG.PCW_EN_EMIO_I2C0 {0} \
    CONFIG.PCW_EN_ENET0 {1} \
    CONFIG.PCW_EN_GPIO {1} \
+   CONFIG.PCW_EN_I2C0 {1} \
    CONFIG.PCW_EN_QSPI {1} \
    CONFIG.PCW_EN_SDIO0 {1} \
    CONFIG.PCW_EN_UART1 {1} \
    CONFIG.PCW_EN_USB0 {1} \
    CONFIG.PCW_FCLK0_PERIPHERAL_DIVISOR0 {5} \
-   CONFIG.PCW_FCLK0_PERIPHERAL_DIVISOR1 {2} \
+   CONFIG.PCW_FCLK0_PERIPHERAL_DIVISOR1 {4} \
    CONFIG.PCW_FCLK1_PERIPHERAL_DIVISOR0 {5} \
    CONFIG.PCW_FCLK1_PERIPHERAL_DIVISOR1 {1} \
    CONFIG.PCW_FCLK2_PERIPHERAL_DIVISOR0 {1} \
@@ -680,7 +677,6 @@ proc create_root_design { parentCell } {
    CONFIG.PCW_FCLK3_PERIPHERAL_DIVISOR0 {1} \
    CONFIG.PCW_FCLK3_PERIPHERAL_DIVISOR1 {1} \
    CONFIG.PCW_FCLK_CLK1_BUF {TRUE} \
-   CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ {100} \
    CONFIG.PCW_FPGA1_PERIPHERAL_FREQMHZ {200} \
    CONFIG.PCW_FPGA_FCLK0_ENABLE {1} \
    CONFIG.PCW_FPGA_FCLK1_ENABLE {1} \
@@ -689,9 +685,12 @@ proc create_root_design { parentCell } {
    CONFIG.PCW_GPIO_MIO_GPIO_ENABLE {1} \
    CONFIG.PCW_GPIO_MIO_GPIO_IO {MIO} \
    CONFIG.PCW_GPIO_PERIPHERAL_ENABLE {0} \
+   CONFIG.PCW_I2C0_GRP_INT_ENABLE {0} \
+   CONFIG.PCW_I2C0_I2C0_IO {MIO 10 .. 11} \
+   CONFIG.PCW_I2C0_PERIPHERAL_ENABLE {1} \
    CONFIG.PCW_I2C0_RESET_ENABLE {0} \
    CONFIG.PCW_I2C1_RESET_ENABLE {0} \
-   CONFIG.PCW_I2C_PERIPHERAL_FREQMHZ {25} \
+   CONFIG.PCW_I2C_PERIPHERAL_FREQMHZ {111.111115} \
    CONFIG.PCW_I2C_RESET_ENABLE {0} \
    CONFIG.PCW_IOPLL_CTRL_FBDIV {30} \
    CONFIG.PCW_IO_IO_PLL_FREQMHZ {1000.000} \
@@ -702,12 +701,12 @@ proc create_root_design { parentCell } {
    CONFIG.PCW_MIO_0_SLEW {slow} \
    CONFIG.PCW_MIO_10_DIRECTION {inout} \
    CONFIG.PCW_MIO_10_IOTYPE {LVCMOS 3.3V} \
-   CONFIG.PCW_MIO_10_PULLUP {enabled} \
-   CONFIG.PCW_MIO_10_SLEW {slow} \
+   CONFIG.PCW_MIO_10_PULLUP {disabled} \
+   CONFIG.PCW_MIO_10_SLEW {fast} \
    CONFIG.PCW_MIO_11_DIRECTION {inout} \
    CONFIG.PCW_MIO_11_IOTYPE {LVCMOS 3.3V} \
-   CONFIG.PCW_MIO_11_PULLUP {enabled} \
-   CONFIG.PCW_MIO_11_SLEW {slow} \
+   CONFIG.PCW_MIO_11_PULLUP {disabled} \
+   CONFIG.PCW_MIO_11_SLEW {fast} \
    CONFIG.PCW_MIO_12_DIRECTION {inout} \
    CONFIG.PCW_MIO_12_IOTYPE {LVCMOS 3.3V} \
    CONFIG.PCW_MIO_12_PULLUP {enabled} \
@@ -912,8 +911,8 @@ proc create_root_design { parentCell } {
    CONFIG.PCW_MIO_9_IOTYPE {LVCMOS 3.3V} \
    CONFIG.PCW_MIO_9_PULLUP {enabled} \
    CONFIG.PCW_MIO_9_SLEW {slow} \
-   CONFIG.PCW_MIO_TREE_PERIPHERALS {GPIO#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#GPIO#Quad SPI Flash#GPIO#GPIO#GPIO#GPIO#GPIO#GPIO#GPIO#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#SD 0#SD 0#SD 0#SD 0#SD 0#SD 0#USB Reset#SD 0#UART 1#UART 1#GPIO#GPIO#Enet 0#Enet 0} \
-   CONFIG.PCW_MIO_TREE_SIGNALS {gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_sclk#gpio[7]#qspi_fbclk#gpio[9]#gpio[10]#gpio[11]#gpio[12]#gpio[13]#gpio[14]#gpio[15]#tx_clk#txd[0]#txd[1]#txd[2]#txd[3]#tx_ctl#rx_clk#rxd[0]#rxd[1]#rxd[2]#rxd[3]#rx_ctl#data[4]#dir#stp#nxt#data[0]#data[1]#data[2]#data[3]#clk#data[5]#data[6]#data[7]#clk#cmd#data[0]#data[1]#data[2]#data[3]#reset#cd#tx#rx#gpio[50]#gpio[51]#mdc#mdio} \
+   CONFIG.PCW_MIO_TREE_PERIPHERALS {GPIO#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#Quad SPI Flash#GPIO#Quad SPI Flash#GPIO#I2C 0#I2C 0#GPIO#GPIO#GPIO#GPIO#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#Enet 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#USB 0#SD 0#SD 0#SD 0#SD 0#SD 0#SD 0#USB Reset#SD 0#UART 1#UART 1#GPIO#GPIO#Enet 0#Enet 0} \
+   CONFIG.PCW_MIO_TREE_SIGNALS {gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_sclk#gpio[7]#qspi_fbclk#gpio[9]#scl#sda#gpio[12]#gpio[13]#gpio[14]#gpio[15]#tx_clk#txd[0]#txd[1]#txd[2]#txd[3]#tx_ctl#rx_clk#rxd[0]#rxd[1]#rxd[2]#rxd[3]#rx_ctl#data[4]#dir#stp#nxt#data[0]#data[1]#data[2]#data[3]#clk#data[5]#data[6]#data[7]#clk#cmd#data[0]#data[1]#data[2]#data[3]#reset#cd#tx#rx#gpio[50]#gpio[51]#mdc#mdio} \
    CONFIG.PCW_NAND_GRP_D8_ENABLE {0} \
    CONFIG.PCW_NAND_PERIPHERAL_ENABLE {0} \
    CONFIG.PCW_NOR_GRP_A25_ENABLE {0} \
@@ -1062,49 +1061,239 @@ proc create_root_design { parentCell } {
    CONFIG.PCW_USE_AXI_NONSECURE {0} \
    CONFIG.PCW_USE_CROSS_TRIGGER {0} \
    CONFIG.PCW_USE_M_AXI_GP0 {1} \
+   CONFIG.PCW_USE_S_AXI_GP0 {0} \
  ] $processing_system7_0
 
-  # Create instance: rgb2dvi_0, and set properties
-  set rgb2dvi_0 [ create_bd_cell -type ip -vlnv digilentinc.com:ip:rgb2dvi:1.4 rgb2dvi_0 ]
+  # Create instance: ps7_0_axi_periph, and set properties
+  set ps7_0_axi_periph [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 ps7_0_axi_periph ]
   set_property -dict [ list \
-   CONFIG.kClkPrimitive {PLL} \
-   CONFIG.kClkRange {3} \
-   CONFIG.kGenerateSerialClk {true} \
- ] $rgb2dvi_0
+   CONFIG.NUM_MI {1} \
+ ] $ps7_0_axi_periph
+
+  # Create instance: rst_ps7_0_50M, and set properties
+  set rst_ps7_0_50M [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 rst_ps7_0_50M ]
 
   # Create interface connections
-  connect_bd_intf_net -intf_net dvi2rgb_0_DDC [get_bd_intf_ports hdmi_rx_ddc] [get_bd_intf_pins dvi2rgb_0/DDC]
-  connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins processing_system7_0/DDR]
-  connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins processing_system7_0/FIXED_IO]
+  connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_pins DDR] [get_bd_intf_pins processing_system7_0/DDR]
+  connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_pins FIXED_IO] [get_bd_intf_pins processing_system7_0/FIXED_IO]
+  connect_bd_intf_net -intf_net processing_system7_0_M_AXI_GP0 [get_bd_intf_pins processing_system7_0/M_AXI_GP0] [get_bd_intf_pins ps7_0_axi_periph/S00_AXI]
+  connect_bd_intf_net -intf_net ps7_0_axi_periph_M00_AXI [get_bd_intf_pins axi_gpio_0/S_AXI] [get_bd_intf_pins ps7_0_axi_periph/M00_AXI]
 
   # Create port connections
-  connect_bd_net -net VCC1_dout [get_bd_ports hdmi_rx_hpa] [get_bd_pins VCC1/dout]
-  connect_bd_net -net Video_Processing_Sys_0_out_HSync [get_bd_pins image_processing_system/out_HSync] [get_bd_pins rgb2dvi_0/vid_pHSync]
-  connect_bd_net -net Video_Processing_Sys_0_out_Pixel_Clk [get_bd_pins image_processing_system/out_Pixel_Clk] [get_bd_pins rgb2dvi_0/PixelClk]
-  connect_bd_net -net Video_Processing_Sys_0_out_VDE [get_bd_pins image_processing_system/out_VDE] [get_bd_pins rgb2dvi_0/vid_pVDE]
-  connect_bd_net -net Video_Processing_Sys_0_out_VSync [get_bd_pins image_processing_system/out_VSync] [get_bd_pins rgb2dvi_0/vid_pVSync]
-  connect_bd_net -net dvi2rgb_0_PixelClk [get_bd_pins dvi2rgb_0/PixelClk] [get_bd_pins image_processing_system/in_Pixel_Clk]
-  connect_bd_net -net dvi2rgb_0_vid_pData [get_bd_pins dvi2rgb_0/vid_pData] [get_bd_pins image_processing_system/RGB]
-  connect_bd_net -net dvi2rgb_0_vid_pHSync [get_bd_pins dvi2rgb_0/vid_pHSync] [get_bd_pins image_processing_system/in_HSync]
-  connect_bd_net -net dvi2rgb_0_vid_pVDE [get_bd_pins dvi2rgb_0/vid_pVDE] [get_bd_pins image_processing_system/in_VDE]
-  connect_bd_net -net dvi2rgb_0_vid_pVSync [get_bd_pins dvi2rgb_0/vid_pVSync] [get_bd_pins image_processing_system/in_VSync]
-  connect_bd_net -net en_0_1 [get_bd_ports switch_0] [get_bd_pins image_processing_system/en_gray]
-  connect_bd_net -net en_0_2 [get_bd_ports switch_1] [get_bd_pins image_processing_system/en_filter]
-  connect_bd_net -net hdmi_rx_clk_n_1 [get_bd_ports hdmi_rx_clk_n] [get_bd_pins dvi2rgb_0/TMDS_Clk_n]
-  connect_bd_net -net hdmi_rx_clk_p_1 [get_bd_ports hdmi_rx_clk_p] [get_bd_pins dvi2rgb_0/TMDS_Clk_p]
-  connect_bd_net -net hdmi_rx_data_n_1 [get_bd_ports hdmi_rx_data_n] [get_bd_pins dvi2rgb_0/TMDS_Data_n]
-  connect_bd_net -net hdmi_rx_data_p_1 [get_bd_ports hdmi_rx_data_p] [get_bd_pins dvi2rgb_0/TMDS_Data_p]
-  connect_bd_net -net image_filter_out_Pixel [get_bd_pins image_processing_system/out_Pixel] [get_bd_pins rgb2dvi_0/vid_pData]
-  connect_bd_net -net image_filter_status [get_bd_ports led_1] [get_bd_pins image_processing_system/status_filter]
-  connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK]
-  connect_bd_net -net processing_system7_0_FCLK_CLK1 [get_bd_pins dvi2rgb_0/RefClk] [get_bd_pins image_processing_system/clk] [get_bd_pins processing_system7_0/FCLK_CLK1]
-  connect_bd_net -net rgb2dvi_0_TMDS_Clk_n [get_bd_ports hdmi_tx_clk_n] [get_bd_pins rgb2dvi_0/TMDS_Clk_n]
-  connect_bd_net -net rgb2dvi_0_TMDS_Clk_p [get_bd_ports hdmi_tx_clk_p] [get_bd_pins rgb2dvi_0/TMDS_Clk_p]
-  connect_bd_net -net rgb2dvi_0_TMDS_Data_n [get_bd_ports hdmi_tx_data_n] [get_bd_pins rgb2dvi_0/TMDS_Data_n]
-  connect_bd_net -net rgb2dvi_0_TMDS_Data_p [get_bd_ports hdmi_tx_data_p] [get_bd_pins rgb2dvi_0/TMDS_Data_p]
+  connect_bd_net -net axi_gpio_0_gpio2_io_o [get_bd_pins gpio_2] [get_bd_pins axi_gpio_0/gpio2_io_o]
+  connect_bd_net -net axi_gpio_0_gpio_io_o [get_bd_pins gpio_1] [get_bd_pins axi_gpio_0/gpio_io_o]
+  connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins axi_gpio_0/s_axi_aclk] [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK] [get_bd_pins ps7_0_axi_periph/ACLK] [get_bd_pins ps7_0_axi_periph/M00_ACLK] [get_bd_pins ps7_0_axi_periph/S00_ACLK] [get_bd_pins rst_ps7_0_50M/slowest_sync_clk]
+  connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins processing_system7_0/FCLK_RESET0_N] [get_bd_pins rst_ps7_0_50M/ext_reset_in]
+  connect_bd_net -net rst_ps7_0_50M_interconnect_aresetn [get_bd_pins ps7_0_axi_periph/ARESETN] [get_bd_pins rst_ps7_0_50M/interconnect_aresetn]
+  connect_bd_net -net rst_ps7_0_50M_peripheral_aresetn [get_bd_pins axi_gpio_0/s_axi_aresetn] [get_bd_pins ps7_0_axi_periph/M00_ARESETN] [get_bd_pins ps7_0_axi_periph/S00_ARESETN] [get_bd_pins rst_ps7_0_50M/peripheral_aresetn]
+
+  # Restore current instance
+  current_bd_instance $oldCurInst
+}
+
+# Hierarchical cell: image_processing_system
+proc create_hier_cell_image_processing_system { parentCell nameHier } {
+
+  variable script_folder
+
+  if { $parentCell eq "" || $nameHier eq "" } {
+     catch {common::send_msg_id "BD_TCL-102" "ERROR" "create_hier_cell_image_processing_system() - Empty argument(s)!"}
+     return
+  }
+
+  # Get object for parentCell
+  set parentObj [get_bd_cells $parentCell]
+  if { $parentObj == "" } {
+     catch {common::send_msg_id "BD_TCL-100" "ERROR" "Unable to find parent cell <$parentCell>!"}
+     return
+  }
+
+  # Make sure parentObj is hier blk
+  set parentType [get_property TYPE $parentObj]
+  if { $parentType ne "hier" } {
+     catch {common::send_msg_id "BD_TCL-101" "ERROR" "Parent <$parentObj> has TYPE = <$parentType>. Expected to be <hier>."}
+     return
+  }
+
+  # Save current instance; Restore later
+  set oldCurInst [current_bd_instance .]
+
+  # Set parent object as current
+  current_bd_instance $parentObj
+
+  # Create cell and set as current instance
+  set hier_obj [create_bd_cell -type hier $nameHier]
+  current_bd_instance $hier_obj
+
+  # Create interface pins
+
+  # Create pins
+  create_bd_pin -dir I -type clk clk
+  create_bd_pin -dir I en_filter
+  create_bd_pin -dir I en_gray
+  create_bd_pin -dir I -from 23 -to 0 in_Pixel
+  create_bd_pin -dir I -type clk in_Pixel_Clk
+  create_bd_pin -dir O -from 23 -to 0 out_Pixel
+  create_bd_pin -dir O proj_Pixel
+  create_bd_pin -dir O status_filter
+  create_bd_pin -dir O status_gray
+
+  # Create instance: image_filter, and set properties
+  set block_name Video_Processing_System
+  set block_cell_name image_filter
+  if { [catch {set image_filter [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   } elseif { $image_filter eq "" } {
+     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   }
+  
+  # Create instance: rgb2gray, and set properties
+  set block_name RGB_to_Gray
+  set block_cell_name rgb2gray
+  if { [catch {set rgb2gray [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   } elseif { $rgb2gray eq "" } {
+     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   }
+  
+  # Create instance: triple_buffering_720p
+  create_hier_cell_triple_buffering_720p $hier_obj triple_buffering_720p
+
+  # Create port connections
+  connect_bd_net -net clk_1 [get_bd_pins clk] [get_bd_pins image_filter/clk]
+  connect_bd_net -net dvi2rgb_0_PixelClk [get_bd_pins in_Pixel_Clk] [get_bd_pins image_filter/in_Pixel_Clk] [get_bd_pins rgb2gray/clk] [get_bd_pins triple_buffering_720p/clk]
+  connect_bd_net -net dvi2rgb_0_vid_pData [get_bd_pins in_Pixel] [get_bd_pins rgb2gray/RGB]
+  connect_bd_net -net en_0_1 [get_bd_pins en_gray] [get_bd_pins rgb2gray/en]
+  connect_bd_net -net en_0_2 [get_bd_pins en_filter] [get_bd_pins image_filter/en]
+  connect_bd_net -net image_filter_out_Pixel [get_bd_pins out_Pixel] [get_bd_pins image_filter/out_Pixel]
+  connect_bd_net -net image_filter_proj_pixel [get_bd_pins proj_Pixel] [get_bd_pins image_filter/proj_pixel]
+  connect_bd_net -net image_filter_status [get_bd_pins status_filter] [get_bd_pins image_filter/status]
+  connect_bd_net -net rgb2gray_G [get_bd_pins image_filter/in_Pixel] [get_bd_pins rgb2gray/G] [get_bd_pins triple_buffering_720p/pixel]
+  connect_bd_net -net rgb2gray_status [get_bd_pins status_gray] [get_bd_pins rgb2gray/status]
+  connect_bd_net -net triple_buffering_720p_mat_center [get_bd_pins image_filter/in_M1] [get_bd_pins triple_buffering_720p/mat_center]
+  connect_bd_net -net triple_buffering_720p_mat_high [get_bd_pins image_filter/in_M2] [get_bd_pins triple_buffering_720p/mat_high]
+  connect_bd_net -net triple_buffering_720p_mat_low [get_bd_pins image_filter/in_M0] [get_bd_pins triple_buffering_720p/mat_low]
+
+  # Restore current instance
+  current_bd_instance $oldCurInst
+}
+
+
+# Procedure to create entire design; Provide argument to make
+# procedure reusable. If parentCell is "", will use root.
+proc create_root_design { parentCell } {
+
+  variable script_folder
+  variable design_name
+
+  if { $parentCell eq "" } {
+     set parentCell [get_bd_cells /]
+  }
+
+  # Get object for parentCell
+  set parentObj [get_bd_cells $parentCell]
+  if { $parentObj == "" } {
+     catch {common::send_msg_id "BD_TCL-100" "ERROR" "Unable to find parent cell <$parentCell>!"}
+     return
+  }
+
+  # Make sure parentObj is hier blk
+  set parentType [get_property TYPE $parentObj]
+  if { $parentType ne "hier" } {
+     catch {common::send_msg_id "BD_TCL-101" "ERROR" "Parent <$parentObj> has TYPE = <$parentType>. Expected to be <hier>."}
+     return
+  }
+
+  # Save current instance; Restore later
+  set oldCurInst [current_bd_instance .]
+
+  # Set parent object as current
+  current_bd_instance $parentObj
+
+
+  # Create interface ports
+  set DDR [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:ddrx_rtl:1.0 DDR ]
+  set FIXED_IO [ create_bd_intf_port -mode Master -vlnv xilinx.com:display_processing_system7:fixedio_rtl:1.0 FIXED_IO ]
+  set hdmi_rx_ddc [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:iic_rtl:1.0 hdmi_rx_ddc ]
+
+  # Create ports
+  set hdmi_rx_clk_n [ create_bd_port -dir I -type clk hdmi_rx_clk_n ]
+  set hdmi_rx_clk_p [ create_bd_port -dir I -type clk hdmi_rx_clk_p ]
+  set hdmi_rx_data_n [ create_bd_port -dir I -from 2 -to 0 hdmi_rx_data_n ]
+  set hdmi_rx_data_p [ create_bd_port -dir I -from 2 -to 0 hdmi_rx_data_p ]
+  set hdmi_rx_hpa [ create_bd_port -dir O -from 0 -to 0 hdmi_rx_hpa ]
+  set hdmi_tx_clk_n [ create_bd_port -dir O -type clk hdmi_tx_clk_n ]
+  set hdmi_tx_clk_p [ create_bd_port -dir O -type clk hdmi_tx_clk_p ]
+  set hdmi_tx_data_n [ create_bd_port -dir O -from 2 -to 0 hdmi_tx_data_n ]
+  set hdmi_tx_data_p [ create_bd_port -dir O -from 2 -to 0 hdmi_tx_data_p ]
+  set led_0 [ create_bd_port -dir O led_0 ]
+  set led_1 [ create_bd_port -dir O led_1 ]
+  set proj_data [ create_bd_port -dir O proj_data ]
+  set proj_data_en [ create_bd_port -dir O proj_data_en ]
+  set proj_hsync [ create_bd_port -dir O proj_hsync ]
+  set proj_pclk [ create_bd_port -dir O proj_pclk ]
+  set proj_vsync [ create_bd_port -dir O proj_vsync ]
+  set sys_clock [ create_bd_port -dir I -type clk sys_clock ]
+  set_property -dict [ list \
+   CONFIG.FREQ_HZ {200000000} \
+ ] $sys_clock
+
+  # Create instance: image_processing_system
+  create_hier_cell_image_processing_system [current_bd_instance .] image_processing_system
+
+  # Create instance: processor
+  create_hier_cell_processor [current_bd_instance .] processor
+
+  # Create instance: video_in, and set properties
+  set video_in [ create_bd_cell -type ip -vlnv digilentinc.com:ip:dvi2rgb:1.9 video_in ]
+  set_property -dict [ list \
+   CONFIG.kClkRange {3} \
+   CONFIG.kDebug {false} \
+   CONFIG.kEdidFileName {dgl_720p_cea.data} \
+   CONFIG.kEnableSerialClkOutput {false} \
+   CONFIG.kRstActiveHigh {true} \
+ ] $video_in
+
+  # Create instance: video_out
+  create_hier_cell_video_out [current_bd_instance .] video_out
+
+  # Create interface connections
+  connect_bd_intf_net -intf_net dvi2rgb_0_DDC [get_bd_intf_ports hdmi_rx_ddc] [get_bd_intf_pins video_in/DDC]
+  connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins processor/DDR]
+  connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins processor/FIXED_IO]
+
+  # Create port connections
+  connect_bd_net -net VCC1_dout [get_bd_ports hdmi_rx_hpa] [get_bd_pins video_out/hdmi_rx_hpa]
+  connect_bd_net -net axi_gpio_0_gpio2_io_o [get_bd_pins image_processing_system/en_gray] [get_bd_pins processor/gpio_2]
+  connect_bd_net -net axi_gpio_0_gpio_io_o [get_bd_pins image_processing_system/en_filter] [get_bd_pins processor/gpio_1]
+  connect_bd_net -net dvi2rgb_0_PixelClk [get_bd_ports proj_pclk] [get_bd_pins image_processing_system/in_Pixel_Clk] [get_bd_pins video_in/PixelClk] [get_bd_pins video_out/pclk_in]
+  connect_bd_net -net dvi2rgb_0_vid_pData [get_bd_pins image_processing_system/in_Pixel] [get_bd_pins video_in/vid_pData]
+  connect_bd_net -net dvi2rgb_0_vid_pHSync [get_bd_pins video_in/vid_pHSync] [get_bd_pins video_out/hsync_in]
+  connect_bd_net -net dvi2rgb_0_vid_pVDE [get_bd_pins video_in/vid_pVDE] [get_bd_pins video_out/active_video_in]
+  connect_bd_net -net dvi2rgb_0_vid_pVSync [get_bd_pins video_in/vid_pVSync] [get_bd_pins video_out/vsync_in]
+  connect_bd_net -net hdmi_rx_clk_n_1 [get_bd_ports hdmi_rx_clk_n] [get_bd_pins video_in/TMDS_Clk_n]
+  connect_bd_net -net hdmi_rx_clk_p_1 [get_bd_ports hdmi_rx_clk_p] [get_bd_pins video_in/TMDS_Clk_p]
+  connect_bd_net -net hdmi_rx_data_n_1 [get_bd_ports hdmi_rx_data_n] [get_bd_pins video_in/TMDS_Data_n]
+  connect_bd_net -net hdmi_rx_data_p_1 [get_bd_ports hdmi_rx_data_p] [get_bd_pins video_in/TMDS_Data_p]
+  connect_bd_net -net image_processing_system_out_Pixel [get_bd_pins image_processing_system/out_Pixel] [get_bd_pins video_out/pixel_in]
+  connect_bd_net -net image_processing_system_proj_data [get_bd_ports proj_data] [get_bd_pins image_processing_system/proj_Pixel]
+  connect_bd_net -net image_processing_system_status_filter [get_bd_ports led_1] [get_bd_pins image_processing_system/status_filter]
+  connect_bd_net -net rgb2dvi_0_TMDS_Clk_n [get_bd_ports hdmi_tx_clk_n] [get_bd_pins video_out/hdmi_tx_clk_n]
+  connect_bd_net -net rgb2dvi_0_TMDS_Clk_p [get_bd_ports hdmi_tx_clk_p] [get_bd_pins video_out/hdmi_tx_clk_p]
+  connect_bd_net -net rgb2dvi_0_TMDS_Data_n [get_bd_ports hdmi_tx_data_n] [get_bd_pins video_out/hdmi_tx_data_n]
+  connect_bd_net -net rgb2dvi_0_TMDS_Data_p [get_bd_ports hdmi_tx_data_p] [get_bd_pins video_out/hdmi_tx_data_p]
   connect_bd_net -net rgb2gray_status [get_bd_ports led_0] [get_bd_pins image_processing_system/status_gray]
+  connect_bd_net -net sys_clock_1 [get_bd_ports sys_clock] [get_bd_pins image_processing_system/clk] [get_bd_pins video_in/RefClk]
+  connect_bd_net -net v_tc_0_active_video_out [get_bd_ports proj_data_en] [get_bd_pins video_out/proj_data_en]
+  connect_bd_net -net v_tc_0_hsync_out [get_bd_ports proj_hsync] [get_bd_pins video_out/proj_hsync]
+  connect_bd_net -net v_tc_0_vsync_out [get_bd_ports proj_vsync] [get_bd_pins video_out/proj_vsync]
 
   # Create address segments
+  create_bd_addr_seg -range 0x00010000 -offset 0x41200000 [get_bd_addr_spaces processor/processing_system7_0/Data] [get_bd_addr_segs processor/axi_gpio_0/S_AXI/Reg] SEG_axi_gpio_0_Reg
 
 
   # Restore current instance
