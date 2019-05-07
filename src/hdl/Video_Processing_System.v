@@ -9,7 +9,10 @@
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
-// Description: 
+// Description: This module is used to apply an image filter on the received frame.
+//              The image comes in as 3 frame buffers and an mathematical operation
+//              is applied on 3 pixels from each row (top, center, bottom). The 
+//              resulted value is then outputed to the next component.
 // 
 // Dependencies: 
 // 
