@@ -9,7 +9,9 @@
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
-// Description: This module is used to convert a 24-bit RGB pixel into grayscale.
+// Description: This module is used store one line made out of 3 pixels used in the
+//              convolution operation. After a pixel clock, the value gets shifted 
+//              with one pixel and the new pixel is added to the line.
 // 
 // Dependencies: 
 // 
