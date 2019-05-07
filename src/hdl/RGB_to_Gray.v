@@ -9,7 +9,7 @@
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
-// Description: 
+// Description: This module is used to convert a 24-bit RGB pixel into grayscale
 // 
 // Dependencies: 
 // 
@@ -35,22 +35,29 @@ module RGB_to_Gray(
     wire [7:0]  GREEN;
     wire [7:0]  RED;
     
+    // Output the current status (enalbed/disabled)
     assign status   = en;
+    // Assign a register to the output
     assign G        = rgb2gray;
+    // Split the input in RGB values
     assign BLUE     = tempPixel[7:0];
     assign GREEN    = tempPixel[15:8];
     assign RED      = tempPixel[23:16];
     
 always @ (posedge clk)
 begin
-    if(en)
-    begin                    
+    // If the module is enabled output grayscale pixel
+    if(en) begin                    
+        // Store the pixel value
         tempPixel = RGB; 
+        // Convert to grayscale
         grayPixel = ((RED * 76) + (GREEN * 151) +(BLUE * 28));
+        // Place the gray value on all 3 components
         rgb2gray[23:16] = grayPixel[15:8];
         rgb2gray[15:8] = grayPixel[15:8];
         rgb2gray[7:0] = grayPixel[15:8];
     end else begin
+        // If the module is disabled just pass the input pixel
         rgb2gray = RGB;      
     end     
 end
