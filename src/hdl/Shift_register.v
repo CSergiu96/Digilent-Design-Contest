@@ -27,12 +27,15 @@ module Shift_register(
     output [71:0] line
     );
     
-reg [71:0] resultLine;
+    // Aux register
+    reg [71:0] resultLine;
+    // Assign the register to the output
+    assign line  = resultLine;
 
-assign line  = resultLine;
-
+// Shift the value if enabled
 always @(posedge clk & en)
 begin
+    // 9-byte shift register with added value on last 3 bytes
     resultLine = ((resultLine << 24) | pixel);
 end
 endmodule
