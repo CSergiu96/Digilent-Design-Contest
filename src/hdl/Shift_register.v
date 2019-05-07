@@ -9,7 +9,7 @@
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
-// Description: 
+// Description: This module is used to convert a 24-bit RGB pixel into grayscale.
 // 
 // Dependencies: 
 // 
